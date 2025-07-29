@@ -5,7 +5,7 @@ import { useFirebaseItems } from '../../hooks/useFirebaseItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
 
 const Home = () => {
-  const { items, getStats, addTestData, firebaseConnected, syncStatus } = useFirebaseItems();
+  const { items, getStats, addTestData, firebaseConnected, syncStatus, manualSync } = useFirebaseItems();
   const stats = getStats();
 
   const recentItems = items.slice(0, 5);
@@ -59,6 +59,14 @@ const Home = () => {
           </Link>
           <button className="btn btn-secondary" onClick={addTestData}>
             添加测试数据
+          </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={manualSync}
+            style={{ background: syncStatus === 'syncing' ? '#ccc' : undefined }}
+            disabled={syncStatus === 'syncing'}
+          >
+            {syncStatus === 'syncing' ? '同步中...' : '手动同步到Firebase'}
           </button>
         </div>
       </div>

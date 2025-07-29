@@ -7,6 +7,7 @@ import Items from './pages/Items';
 import AddItem from './pages/AddItem';
 import Expiring from './pages/Expiring';
 import FirebaseTest from './components/FirebaseTest';
+import FirebaseDebug from './components/FirebaseDebug';
 
 function App() {
   return (
@@ -18,6 +19,7 @@ function App() {
           <Route path="/add" element={<AddItem />} />
           <Route path="/expiring" element={<Expiring />} />
           <Route path="/firebase-test" element={<FirebaseTest />} />
+          <Route path="/firebase-debug" element={<FirebaseDebug />} />
         </Routes>
       </Layout>
     </Router>

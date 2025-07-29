@@ -1,10 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { 
   addItemToFirebase, 
   getItemsFromFirebase, 
   updateItemInFirebase, 
-  deleteItemFromFirebase,
-  subscribeToItems 
+  deleteItemFromFirebase
 } from '../services/itemService';
 import { generateTestData } from '../utils/itemUtils';
 
@@ -14,6 +13,30 @@ export const useFirebaseItems = () => {
   const [loading, setLoading] = useState(true);
   const [firebaseConnected, setFirebaseConnected] = useState(false);
   const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, error
+
+  // 同步数据到Firebase
+  const syncToFirebase = useCallback(async (itemsToSync) => {
+    if (!firebaseConnected) return;
+    
+    setSyncStatus('syncing');
+    try {
+      // 清空Firebase现有数据
+      const existingItems = await getItemsFromFirebase();
+      for (const item of existingItems) {
+        await deleteItemFromFirebase(item.id);
+      }
+      
+      // 上传本地数据到Firebase
+      for (const item of itemsToSync) {
+        await addItemToFirebase(item);
+      }
+      
+      setSyncStatus('idle');
+    } catch (error) {
+      console.error('同步到Firebase失败:', error);
+      setSyncStatus('error');
+    }
+  }, [firebaseConnected]);
 
   // 初始化：从localStorage加载数据，然后尝试同步到Firebase
   useEffect(() => {
@@ -54,31 +77,7 @@ export const useFirebaseItems = () => {
     };
 
     initializeData();
-  }, []);
-
-  // 同步数据到Firebase
-  const syncToFirebase = async (itemsToSync) => {
-    if (!firebaseConnected) return;
-    
-    setSyncStatus('syncing');
-    try {
-      // 清空Firebase现有数据
-      const existingItems = await getItemsFromFirebase();
-      for (const item of existingItems) {
-        await deleteItemFromFirebase(item.id);
-      }
-      
-      // 上传本地数据到Firebase
-      for (const item of itemsToSync) {
-        await addItemToFirebase(item);
-      }
-      
-      setSyncStatus('idle');
-    } catch (error) {
-      console.error('同步到Firebase失败:', error);
-      setSyncStatus('error');
-    }
-  };
+  }, [syncToFirebase]);
 
   // 添加物品
   const addItem = async (itemData) => {
