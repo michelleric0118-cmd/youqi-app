@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Search, Trash2 } from 'lucide-react';
-import { useItems } from '../../hooks/useItems';
+import { useFirebaseItems } from '../../hooks/useFirebaseItems';
 import { getExpiryStatus, getExpiryText, CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
 
 const Items = () => {
-  const { items, deleteItem } = useItems();
+  const { items, deleteItem } = useFirebaseItems();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');

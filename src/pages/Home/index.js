@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Package } from 'lucide-react';
-import { useItems } from '../../hooks/useItems';
+import { useFirebaseItems } from '../../hooks/useFirebaseItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
 
 const Home = () => {
-  const { items, getStats, addTestData } = useItems();
+  const { items, getStats, addTestData, firebaseConnected, syncStatus } = useFirebaseItems();
   const stats = getStats();
 
   const recentItems = items.slice(0, 5);
@@ -28,9 +28,30 @@ const Home = () => {
         </div>
       </div>
 
-      {/* 快速操作 */}
+      {/* 数据同步状态 */}
       <div className="card">
-        <h3>快速操作</h3>
+        <h3>数据同步状态</h3>
+        <div style={{ marginBottom: '15px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+            <span>Firebase连接：</span>
+            <span style={{ 
+              color: firebaseConnected ? 'green' : 'red',
+              fontWeight: 'bold'
+            }}>
+              {firebaseConnected ? '✅ 已连接' : '❌ 未连接'}
+            </span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span>同步状态：</span>
+            <span style={{ 
+              color: syncStatus === 'idle' ? 'green' : syncStatus === 'syncing' ? 'orange' : 'red',
+              fontWeight: 'bold'
+            }}>
+              {syncStatus === 'idle' ? '✅ 已同步' : syncStatus === 'syncing' ? '⏳ 同步中' : '❌ 同步失败'}
+            </span>
+          </div>
+        </div>
+        
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
           <Link to="/add" className="btn">
             <Plus size={20} style={{ marginRight: '8px' }} />

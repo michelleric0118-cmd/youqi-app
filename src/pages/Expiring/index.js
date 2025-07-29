@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Clock, AlertTriangle, XCircle } from 'lucide-react';
-import { useItems } from '../../hooks/useItems';
+import { useFirebaseItems } from '../../hooks/useFirebaseItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
 
 const Expiring = () => {
-  const { getExpiringItems } = useItems();
+  const { getExpiringItems } = useFirebaseItems();
   const [filter, setFilter] = useState('all');
 
   const filterOptions = [
