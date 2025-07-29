@@ -34,7 +34,7 @@ const FirebaseDebug = () => {
   const testAddItem = async () => {
     try {
       const testItem = {
-        name: '测试物品',
+        name: `测试物品_${new Date().getTime()}`,
         category: '其他',
         quantity: 1,
         expiryDate: '2025-12-31',
@@ -46,9 +46,13 @@ const FirebaseDebug = () => {
       
       // 重新测试连接
       await testConnection();
+      
+      // 显示成功消息
+      alert(`测试物品添加成功！\n物品名称: ${testItem.name}\nFirebase ID: ${result.id}`);
     } catch (error) {
       console.error('添加测试物品失败:', error);
       setDebugInfo(prev => ({ ...prev, lastError: error.message }));
+      alert(`添加失败: ${error.message}`);
     }
   };
 
