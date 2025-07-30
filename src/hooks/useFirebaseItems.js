@@ -53,39 +53,48 @@ export const useFirebaseItems = () => {
         // 1. 从localStorage加载现有数据
         const savedItems = localStorage.getItem('youqi-items');
         const localItems = savedItems ? JSON.parse(savedItems) : [];
+        console.log('localStorage数据数量:', localItems.length);
         
         // 2. 尝试从Firebase获取数据
         try {
           const firebaseItems = await getItemsFromFirebase();
           setFirebaseConnected(true);
+          console.log('Firebase数据数量:', firebaseItems.length);
           
-          // 3. 优先使用Firebase数据，如果Firebase为空则使用localStorage
+          // 3. 数据源选择逻辑
+          let finalItems = [];
+          
           if (firebaseItems.length > 0) {
-            console.log('使用Firebase数据，数量:', firebaseItems.length);
-            // 去重处理：基于ID去重
-            const uniqueItems = firebaseItems.filter((item, index, self) => 
-              index === self.findIndex(t => t.id === item.id)
-            );
-            setItems(uniqueItems);
-            // 更新localStorage以保持一致性
-            localStorage.setItem('youqi-items', JSON.stringify(uniqueItems));
+            console.log('使用Firebase数据');
+            finalItems = firebaseItems;
           } else if (localItems.length > 0) {
-            console.log('使用localStorage数据，数量:', localItems.length);
-            // 去重处理：基于ID去重
-            const uniqueItems = localItems.filter((item, index, self) => 
-              index === self.findIndex(t => t.id === item.id)
-            );
-            setItems(uniqueItems);
+            console.log('使用localStorage数据');
+            finalItems = localItems;
             // 上传到Firebase
-            await syncToFirebase(uniqueItems);
+            await syncToFirebase(localItems);
           } else {
             console.log('没有数据，设置为空数组');
-            setItems([]);
+            finalItems = [];
           }
+          
+          // 4. 去重处理
+          const uniqueItems = finalItems.filter((item, index, self) => 
+            index === self.findIndex(t => t.id === item.id)
+          );
+          
+          console.log('去重后数据数量:', uniqueItems.length);
+          setItems(uniqueItems);
+          localStorage.setItem('youqi-items', JSON.stringify(uniqueItems));
+          
         } catch (error) {
           console.error('Firebase连接失败，使用本地数据:', error);
           setFirebaseConnected(false);
-          setItems(localItems);
+          
+          // 使用localStorage数据，并去重
+          const uniqueItems = localItems.filter((item, index, self) => 
+            index === self.findIndex(t => t.id === item.id)
+          );
+          setItems(uniqueItems);
         }
       } catch (error) {
         console.error('数据初始化失败:', error);

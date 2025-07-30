@@ -82,6 +82,16 @@ const Home = () => {
           >
             刷新页面
           </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => {
+              localStorage.removeItem('youqi-items');
+              window.location.reload();
+            }}
+            style={{ background: '#dc3545', color: 'white' }}
+          >
+            强制清空并刷新
+          </button>
         </div>
       </div>
 
