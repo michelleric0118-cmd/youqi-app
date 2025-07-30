@@ -71,12 +71,12 @@ const Expiring = () => {
               <p>暂无{filter === 'all' ? '' : filter === 'expired' ? '已过期' : filter === 'expiring-soon' ? '即将过期' : '30天内过期'}的物品</p>
             </div>
           ) : (
-            expiringItems.map(item => {
+            expiringItems.map((item, index) => {
               const expiryStatus = getExpiryStatus(item.expiryDate);
               const expiryInfo = getExpiryText(item.expiryDate);
               
               return (
-                <div key={item.id} className={`item ${expiryStatus}`}>
+                <div key={`${item.id}-${index}`} className={`item ${expiryStatus}`}>
                   <div className="item-header">
                     <div className="item-name">{item.name}</div>
                     <div className="item-category">{item.category}</div>

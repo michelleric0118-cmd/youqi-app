@@ -43,8 +43,6 @@ const FirebaseDataViewer = () => {
       return matchesSearch && matchesCategory;
     });
 
-    console.log('排序参数:', { sortBy, sortOrder, filteredCount: filtered.length });
-    
     return filtered.sort((a, b) => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
@@ -136,10 +134,7 @@ const FirebaseDataViewer = () => {
         </select>
         <select
           value={sortBy}
-          onChange={(e) => {
-            console.log('排序字段改变:', e.target.value);
-            setSortBy(e.target.value);
-          }}
+          onChange={(e) => setSortBy(e.target.value)}
           style={{ minWidth: '120px' }}
         >
           <option value="createdAt">创建时间</option>
@@ -149,10 +144,7 @@ const FirebaseDataViewer = () => {
         </select>
         <select
           value={sortOrder}
-          onChange={(e) => {
-            console.log('排序顺序改变:', e.target.value);
-            setSortOrder(e.target.value);
-          }}
+          onChange={(e) => setSortOrder(e.target.value)}
           style={{ minWidth: '80px' }}
         >
           <option value="desc">降序</option>
@@ -178,10 +170,12 @@ const FirebaseDataViewer = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredAndSortedItems.map(item => {
+              {filteredAndSortedItems.map((item, index) => {
                 const expiryStatus = getExpiryStatus(item.expiryDate);
+                // 使用更唯一的key
+                const uniqueKey = item.id || `item-${index}-${Date.now()}`;
                 return (
-                  <tr key={item.id} style={{ borderBottom: '1px solid #eee' }}>
+                  <tr key={uniqueKey} style={{ borderBottom: '1px solid #eee' }}>
                     <td style={{ padding: '10px' }}>{item.name}</td>
                     <td style={{ padding: '10px' }}>{item.category}</td>
                     <td style={{ padding: '10px' }}>{item.brand || '-'}</td>

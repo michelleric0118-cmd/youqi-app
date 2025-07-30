@@ -124,12 +124,12 @@ const Items = () => {
           {filteredItems.length === 0 ? (
             <p>暂无物品</p>
           ) : (
-            filteredItems.map(item => {
+            filteredItems.map((item, index) => {
               const expiryStatus = getExpiryStatus(item.expiryDate);
               const expiryInfo = getExpiryText(item.expiryDate);
               
               return (
-                <div key={item.id} className={`item ${expiryStatus}`}>
+                <div key={`${item.id}-${index}`} className={`item ${expiryStatus}`}>
                   <div className="item-header">
                     <div className="item-name">{item.name}</div>
                     <div className="item-category">{item.category}</div>

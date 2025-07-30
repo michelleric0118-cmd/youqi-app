@@ -55,13 +55,21 @@ export const useFirebaseItems = () => {
           
           // 3. 如果Firebase有数据，使用Firebase数据
           if (firebaseItems.length > 0) {
-            setItems(firebaseItems);
+            // 去重处理：基于ID去重
+            const uniqueItems = firebaseItems.filter((item, index, self) => 
+              index === self.findIndex(t => t.id === item.id)
+            );
+            setItems(uniqueItems);
             // 更新localStorage以保持一致性
-            localStorage.setItem('youqi-items', JSON.stringify(firebaseItems));
+            localStorage.setItem('youqi-items', JSON.stringify(uniqueItems));
           } else if (localItems.length > 0) {
             // 4. 如果localStorage有数据但Firebase为空，上传到Firebase
-            setItems(localItems);
-            await syncToFirebase(localItems);
+            // 去重处理：基于ID去重
+            const uniqueItems = localItems.filter((item, index, self) => 
+              index === self.findIndex(t => t.id === item.id)
+            );
+            setItems(uniqueItems);
+            await syncToFirebase(uniqueItems);
           }
         } catch (error) {
           console.error('Firebase连接失败，使用本地数据:', error);
