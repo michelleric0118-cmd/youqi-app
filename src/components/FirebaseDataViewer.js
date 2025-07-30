@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { getItemsFromFirebase } from '../services/itemService';
 
 const FirebaseDataViewer = () => {
@@ -29,9 +29,9 @@ const FirebaseDataViewer = () => {
     return () => clearInterval(interval);
   }, []);
 
-  // 筛选和排序数据
-  const filteredAndSortedItems = items
-    .filter(item => {
+  // 使用useMemo优化性能
+  const filteredAndSortedItems = React.useMemo(() => {
+    const filtered = items.filter(item => {
       const matchesSearch = !searchTerm || 
         item.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.brand?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,8 +41,9 @@ const FirebaseDataViewer = () => {
       const matchesCategory = !categoryFilter || item.category === categoryFilter;
       
       return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
+    });
+
+    return filtered.sort((a, b) => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
       
@@ -70,6 +71,7 @@ const FirebaseDataViewer = () => {
         return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
+  }, [items, searchTerm, categoryFilter, sortBy, sortOrder]);
 
   const categories = [...new Set(items.map(item => item.category))];
   const totalItems = items.length;

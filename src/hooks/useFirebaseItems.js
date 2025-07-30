@@ -241,7 +241,8 @@ export const useFirebaseItems = () => {
         case 'expiring-month':
           return diffDays >= 0 && diffDays <= 30;
         case 'all':
-          return diffDays <= 30; // 30天内过期的所有物品
+          // "全部"显示所有30天内过期的物品，但不重复显示
+          return diffDays <= 30;
         default:
           return diffDays <= 30;
       }

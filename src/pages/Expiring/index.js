@@ -8,13 +8,13 @@ const Expiring = () => {
   const [filter, setFilter] = useState('all');
 
   const filterOptions = [
-    { value: 'all', label: '全部', icon: Clock },
     { value: 'expired', label: '已过期', icon: XCircle },
     { value: 'expiring-soon', label: '7天内过期', icon: AlertTriangle },
-    { value: 'expiring-month', label: '30天内过期', icon: Clock }
+    { value: 'expiring-month', label: '30天内过期', icon: Clock },
+    { value: 'all', label: '全部', icon: Clock }
   ];
 
-  const expiringItems = getExpiringItems(filter);
+
 
   const getFilterStats = () => {
     const all = getExpiringItems('all').length;
@@ -24,6 +24,19 @@ const Expiring = () => {
 
     return { all, expired, expiringSoon, expiringMonth };
   };
+
+  // 根据筛选条件获取正确的物品列表
+  const getFilteredItems = () => {
+    if (filter === 'all') {
+      // "全部"显示所有30天内过期的物品
+      return getExpiringItems('all');
+    } else {
+      // 其他筛选条件只显示对应分类的物品
+      return getExpiringItems(filter);
+    }
+  };
+
+  const expiringItems = getFilteredItems();
 
   const stats = getFilterStats();
 
