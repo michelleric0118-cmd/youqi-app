@@ -8,6 +8,7 @@ import AddItem from './pages/AddItem';
 import Expiring from './pages/Expiring';
 import FirebaseTest from './components/FirebaseTest';
 import FirebaseDebug from './components/FirebaseDebug';
+import FirebaseDataViewer from './components/FirebaseDataViewer';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
           <Route path="/expiring" element={<Expiring />} />
           <Route path="/firebase-test" element={<FirebaseTest />} />
           <Route path="/firebase-debug" element={<FirebaseDebug />} />
+          <Route path="/firebase-data" element={<FirebaseDataViewer />} />
         </Routes>
       </Layout>
     </Router>
