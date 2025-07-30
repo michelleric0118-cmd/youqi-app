@@ -75,6 +75,13 @@ const Home = () => {
           >
             {syncStatus === 'syncing' ? '同步中...' : '手动同步到Firebase'}
           </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={() => window.location.reload()}
+            style={{ background: '#ffa500', color: 'white' }}
+          >
+            刷新页面
+          </button>
         </div>
       </div>
 

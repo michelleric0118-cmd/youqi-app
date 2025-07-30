@@ -20,17 +20,23 @@ export const useFirebaseItems = () => {
     
     setSyncStatus('syncing');
     try {
+      console.log('开始同步到Firebase，物品数量:', itemsToSync.length);
+      
       // 清空Firebase现有数据
       const existingItems = await getItemsFromFirebase();
+      console.log('清空Firebase现有数据，数量:', existingItems.length);
+      
       for (const item of existingItems) {
         await deleteItemFromFirebase(item.id);
       }
       
       // 上传本地数据到Firebase
+      console.log('开始上传数据到Firebase');
       for (const item of itemsToSync) {
         await addItemToFirebase(item);
       }
       
+      console.log('同步完成');
       setSyncStatus('idle');
     } catch (error) {
       console.error('同步到Firebase失败:', error);
@@ -53,8 +59,9 @@ export const useFirebaseItems = () => {
           const firebaseItems = await getItemsFromFirebase();
           setFirebaseConnected(true);
           
-          // 3. 如果Firebase有数据，使用Firebase数据
+          // 3. 优先使用Firebase数据，如果Firebase为空则使用localStorage
           if (firebaseItems.length > 0) {
+            console.log('使用Firebase数据，数量:', firebaseItems.length);
             // 去重处理：基于ID去重
             const uniqueItems = firebaseItems.filter((item, index, self) => 
               index === self.findIndex(t => t.id === item.id)
@@ -63,13 +70,17 @@ export const useFirebaseItems = () => {
             // 更新localStorage以保持一致性
             localStorage.setItem('youqi-items', JSON.stringify(uniqueItems));
           } else if (localItems.length > 0) {
-            // 4. 如果localStorage有数据但Firebase为空，上传到Firebase
+            console.log('使用localStorage数据，数量:', localItems.length);
             // 去重处理：基于ID去重
             const uniqueItems = localItems.filter((item, index, self) => 
               index === self.findIndex(t => t.id === item.id)
             );
             setItems(uniqueItems);
+            // 上传到Firebase
             await syncToFirebase(uniqueItems);
+          } else {
+            console.log('没有数据，设置为空数组');
+            setItems([]);
           }
         } catch (error) {
           console.error('Firebase连接失败，使用本地数据:', error);
@@ -151,8 +162,22 @@ export const useFirebaseItems = () => {
 
   // 添加测试数据
   const addTestData = async () => {
+    console.log('开始添加测试数据');
     const testItems = generateTestData();
-    const newItems = [...testItems, ...items];
+    
+    // 检查是否已经有测试数据（基于名称匹配）
+    const existingTestItemNames = items.map(item => item.name);
+    const newTestItems = testItems.filter(item => 
+      !existingTestItemNames.includes(item.name)
+    );
+    
+    if (newTestItems.length === 0) {
+      console.log('测试数据已存在，不重复添加');
+      return;
+    }
+    
+    console.log('添加新的测试数据，数量:', newTestItems.length);
+    const newItems = [...newTestItems, ...items];
     setItems(newItems);
     localStorage.setItem('youqi-items', JSON.stringify(newItems));
 
