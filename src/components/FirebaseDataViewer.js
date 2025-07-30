@@ -23,6 +23,10 @@ const FirebaseDataViewer = () => {
 
   useEffect(() => {
     loadItems();
+    
+    // 设置定时刷新，每30秒自动刷新一次
+    const interval = setInterval(loadItems, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // 筛选和排序数据
@@ -42,15 +46,28 @@ const FirebaseDataViewer = () => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
       
+      // 处理日期字段
       if (sortBy === 'createdAt' || sortBy === 'expiryDate') {
-        aValue = new Date(aValue);
-        bValue = new Date(bValue);
+        aValue = aValue ? new Date(aValue) : new Date(0);
+        bValue = bValue ? new Date(bValue) : new Date(0);
+      }
+      
+      // 处理字符串字段
+      if (typeof aValue === 'string') {
+        aValue = aValue.toLowerCase();
+        bValue = bValue ? bValue.toLowerCase() : '';
+      }
+      
+      // 处理数字字段
+      if (typeof aValue === 'number') {
+        aValue = aValue || 0;
+        bValue = bValue || 0;
       }
       
       if (sortOrder === 'asc') {
-        return aValue > bValue ? 1 : -1;
+        return aValue > bValue ? 1 : aValue < bValue ? -1 : 0;
       } else {
-        return aValue < bValue ? 1 : -1;
+        return aValue < bValue ? 1 : aValue > bValue ? -1 : 0;
       }
     });
 

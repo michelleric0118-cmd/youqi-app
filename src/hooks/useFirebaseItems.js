@@ -228,6 +228,8 @@ export const useFirebaseItems = () => {
     const now = new Date();
     
     return items.filter(item => {
+      if (!item.expiryDate) return false;
+      
       const expiry = new Date(item.expiryDate);
       const diffDays = Math.ceil((expiry - now) / (1000 * 60 * 60 * 24));
       
@@ -236,10 +238,10 @@ export const useFirebaseItems = () => {
           return diffDays < 0;
         case 'expiring-soon':
           return diffDays >= 0 && diffDays <= 7;
-        case 'expiring-week':
-          return diffDays >= 0 && diffDays <= 7;
         case 'expiring-month':
           return diffDays >= 0 && diffDays <= 30;
+        case 'all':
+          return diffDays <= 30; // 30天内过期的所有物品
         default:
           return diffDays <= 30;
       }
