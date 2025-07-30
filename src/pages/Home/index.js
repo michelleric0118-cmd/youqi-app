@@ -5,7 +5,7 @@ import { useFirebaseItems } from '../../hooks/useFirebaseItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
 
 const Home = () => {
-  const { items, getStats, addTestData, firebaseConnected, syncStatus, manualSync } = useFirebaseItems();
+  const { items, getStats, addTestData, clearAllItems, firebaseConnected, syncStatus, manualSync } = useFirebaseItems();
   const stats = getStats();
 
   const recentItems = items.slice(0, 5);
@@ -59,6 +59,13 @@ const Home = () => {
           </Link>
           <button className="btn btn-secondary" onClick={addTestData}>
             添加测试数据
+          </button>
+          <button 
+            className="btn btn-secondary" 
+            onClick={clearAllItems}
+            style={{ background: '#ff6b6b', color: 'white' }}
+          >
+            清空所有数据
           </button>
           <button 
             className="btn btn-secondary" 
