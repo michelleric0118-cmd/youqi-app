@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getItemsFromFirebase } from '../services/itemService';
 
 const FirebaseDataViewer = () => {
@@ -43,6 +43,8 @@ const FirebaseDataViewer = () => {
       return matchesSearch && matchesCategory;
     });
 
+    console.log('排序参数:', { sortBy, sortOrder, filteredCount: filtered.length });
+    
     return filtered.sort((a, b) => {
       let aValue = a[sortBy];
       let bValue = b[sortBy];
@@ -134,7 +136,10 @@ const FirebaseDataViewer = () => {
         </select>
         <select
           value={sortBy}
-          onChange={(e) => setSortBy(e.target.value)}
+          onChange={(e) => {
+            console.log('排序字段改变:', e.target.value);
+            setSortBy(e.target.value);
+          }}
           style={{ minWidth: '120px' }}
         >
           <option value="createdAt">创建时间</option>
@@ -144,7 +149,10 @@ const FirebaseDataViewer = () => {
         </select>
         <select
           value={sortOrder}
-          onChange={(e) => setSortOrder(e.target.value)}
+          onChange={(e) => {
+            console.log('排序顺序改变:', e.target.value);
+            setSortOrder(e.target.value);
+          }}
           style={{ minWidth: '80px' }}
         >
           <option value="desc">降序</option>
