@@ -6,9 +6,7 @@ import Home from './pages/Home';
 import Items from './pages/Items';
 import AddItem from './pages/AddItem';
 import Expiring from './pages/Expiring';
-import FirebaseTest from './components/FirebaseTest';
-import FirebaseDebug from './components/FirebaseDebug';
-import FirebaseDataViewer from './components/FirebaseDataViewer';
+import LeanCloudTest from './components/LeanCloudTest';
 
 function App() {
   return (
@@ -19,9 +17,7 @@ function App() {
           <Route path="/items" element={<Items />} />
           <Route path="/add" element={<AddItem />} />
           <Route path="/expiring" element={<Expiring />} />
-          <Route path="/firebase-test" element={<FirebaseTest />} />
-          <Route path="/firebase-debug" element={<FirebaseDebug />} />
-          <Route path="/firebase-data" element={<FirebaseDataViewer />} />
+          <Route path="/leancloud-test" element={<LeanCloudTest />} />
         </Routes>
       </Layout>
     </Router>

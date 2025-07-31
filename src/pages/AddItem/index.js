@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft } from 'lucide-react';
-import { useFirebaseItems } from '../../hooks/useFirebaseItems';
+import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
 
 const AddItem = () => {
   const navigate = useNavigate();
-  const { addItem } = useFirebaseItems();
+  const { addItem } = useLeanCloudItems();
   
   const [formData, setFormData] = useState({
     name: '',

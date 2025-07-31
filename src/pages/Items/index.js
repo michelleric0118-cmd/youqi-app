@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Search, Trash2 } from 'lucide-react';
-import { useFirebaseItems } from '../../hooks/useFirebaseItems';
+import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText, CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
 
 const Items = () => {
-  const { items, deleteItem } = useFirebaseItems();
+  const { items, deleteItem } = useLeanCloudItems();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');

@@ -1,11 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Plus, Package } from 'lucide-react';
-import { useFirebaseItems } from '../../hooks/useFirebaseItems';
+import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
 
 const Home = () => {
-  const { items, getStats, addTestData, clearAllItems, firebaseConnected, syncStatus, manualSync } = useFirebaseItems();
+  const { items, getStats, addTestData, clearAllData, leanCloudConnected, syncStatus, syncToLeanCloud } = useLeanCloudItems();
   const stats = getStats();
 
   const recentItems = items.slice(0, 5);
@@ -33,12 +33,12 @@ const Home = () => {
         <h3>数据同步状态</h3>
         <div style={{ marginBottom: '15px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-            <span>Firebase连接：</span>
+            <span>LeanCloud连接：</span>
             <span style={{ 
-              color: firebaseConnected ? 'green' : 'red',
+              color: leanCloudConnected ? 'green' : 'red',
               fontWeight: 'bold'
             }}>
-              {firebaseConnected ? '✅ 已连接' : '❌ 未连接'}
+              {leanCloudConnected ? '✅ 已连接' : '❌ 未连接'}
             </span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -62,18 +62,18 @@ const Home = () => {
           </button>
           <button 
             className="btn btn-secondary" 
-            onClick={clearAllItems}
+            onClick={clearAllData}
             style={{ background: '#ff6b6b', color: 'white' }}
           >
             清空所有数据
           </button>
           <button 
             className="btn btn-secondary" 
-            onClick={manualSync}
+            onClick={() => syncToLeanCloud(items)}
             style={{ background: syncStatus === 'syncing' ? '#ccc' : undefined }}
             disabled={syncStatus === 'syncing'}
           >
-            {syncStatus === 'syncing' ? '同步中...' : '手动同步到Firebase'}
+            {syncStatus === 'syncing' ? '同步中...' : '手动同步到LeanCloud'}
           </button>
           <button 
             className="btn btn-secondary" 
