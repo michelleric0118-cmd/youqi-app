@@ -2,13 +2,14 @@
   "name": "youqi-app",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://michelleric0118-cmd.github.io/youqi-app",
+  "homepage": "https://youqi1609.gitee.io/youqi-app",
   "dependencies": {
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "date-fns": "^4.1.0",
+    "dotenv": "^17.2.1",
     "firebase": "^12.0.0",
     "leancloud-storage": "^4.15.2",
     "lucide-react": "^0.533.0",
@@ -26,6 +27,7 @@
     "eject": "react-scripts eject",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
+    "deploy:gitee": "npm run build && gh-pages -d build",
     "deploy:cos": "npm run build && node scripts/deploy-cos.js"
   },
   "eslintConfig": {
@@ -47,6 +49,7 @@
     ]
   },
   "devDependencies": {
-    "cos-nodejs-sdk-v5": "^2.16.0-beta.3"
+    "cos-nodejs-sdk-v5": "^2.16.0-beta.3",
+    "gh-pages": "^6.3.0"
   }
 }

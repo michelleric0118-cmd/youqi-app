@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, Trash2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Search, Trash2, Clock, AlertTriangle, Pill, Droplets, Utensils, Package2, Box, Filter, X, Save } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText, CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
 
@@ -9,6 +9,76 @@ const Items = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
   const [selectedMedicineTags, setSelectedMedicineTags] = useState([]);
+  const [searchHistory, setSearchHistory] = useState([]);
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
+  
+  // 高级筛选状态
+  const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
+  const [advancedFilters, setAdvancedFilters] = useState({
+    expiryStatus: '',
+    brand: '',
+    quantityRange: '',
+    dateRange: {
+      start: '',
+      end: ''
+    }
+  });
+  const [savedFilters, setSavedFilters] = useState([]);
+  const [filterName, setFilterName] = useState('');
+  
+  const searchRef = useRef(null);
+
+  // 从URL参数初始化筛选条件
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const categoryFromUrl = urlParams.get('category');
+    if (categoryFromUrl) {
+      setCategoryFilter(decodeURIComponent(categoryFromUrl));
+    }
+  }, []);
+
+  // 获取分类统计
+  const getCategoryStats = () => {
+    const categories = ['药品', '护肤品', '食品', '日用品', '其他'];
+    return categories.map(category => ({
+      name: category,
+      count: items.filter(item => item.category === category).length,
+      icon: getCategoryIcon(category)
+    }));
+  };
+
+  // 获取分类图标
+  const getCategoryIcon = (category) => {
+    switch (category) {
+      case '药品': return <Pill size={20} />;
+      case '护肤品': return <Droplets size={20} />;
+      case '食品': return <Utensils size={20} />;
+      case '日用品': return <Package2 size={20} />;
+      case '其他': return <Box size={20} />;
+      default: return <Box size={20} />;
+    }
+  };
+
+  // 清除所有筛选条件
+  const clearAllFilters = () => {
+    setSearchTerm('');
+    setCategoryFilter('');
+    setSelectedMedicineTags([]);
+    setAdvancedFilters({
+      expiryStatus: '',
+      brand: '',
+      quantityRange: '',
+      dateRange: {
+        start: '',
+        end: ''
+      }
+    });
+  };
+
+  // 检查是否有筛选条件
+  const hasActiveFilters = searchTerm || categoryFilter || selectedMedicineTags.length > 0 || 
+    advancedFilters.expiryStatus || advancedFilters.brand || advancedFilters.quantityRange ||
+    advancedFilters.dateRange.start || advancedFilters.dateRange.end;
 
   const handleCategoryFilterChange = (e) => {
     const category = e.target.value;
@@ -30,10 +100,130 @@ const Items = () => {
     });
   };
 
+  // 高级筛选处理
+  const handleAdvancedFilterChange = (field, value) => {
+    setAdvancedFilters(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleDateRangeChange = (field, value) => {
+    setAdvancedFilters(prev => ({
+      ...prev,
+      dateRange: {
+        ...prev.dateRange,
+        [field]: value
+      }
+    }));
+  };
+
+  // 保存筛选条件
+  const saveFilter = () => {
+    if (!filterName.trim()) {
+      alert('请输入筛选条件名称');
+      return;
+    }
+
+    const filterConfig = {
+      name: filterName,
+      searchTerm,
+      categoryFilter,
+      selectedMedicineTags,
+      advancedFilters,
+      createdAt: new Date().toISOString()
+    };
+
+    setSavedFilters(prev => [...prev, filterConfig]);
+    setFilterName('');
+    alert('筛选条件已保存');
+  };
+
+  // 应用保存的筛选条件
+  const applySavedFilter = (filterConfig) => {
+    setSearchTerm(filterConfig.searchTerm);
+    setCategoryFilter(filterConfig.categoryFilter);
+    setSelectedMedicineTags(filterConfig.selectedMedicineTags);
+    setAdvancedFilters(filterConfig.advancedFilters);
+  };
+
+  // 删除保存的筛选条件
+  const deleteSavedFilter = (index) => {
+    setSavedFilters(prev => prev.filter((_, i) => i !== index));
+  };
+
   const handleDelete = (id) => {
     if (window.confirm('确定要删除这个物品吗？')) {
       deleteItem(id);
     }
+  };
+
+  const handleSearch = (term) => {
+    setSearchTerm(term);
+    setShowSearchHistory(false);
+    
+    // 添加到搜索历史
+    if (term.trim() && !searchHistory.includes(term.trim())) {
+      setSearchHistory(prev => [term.trim(), ...prev.slice(0, 4)]);
+    }
+  };
+
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+  };
+
+  // 点击外部关闭搜索历史
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchHistory(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
+
+  // 高级筛选逻辑
+  const matchesAdvancedFilters = (item) => {
+    // 过期状态筛选
+    if (advancedFilters.expiryStatus) {
+      const itemStatus = getExpiryStatus(item.expiryDate);
+      if (itemStatus !== advancedFilters.expiryStatus) {
+        return false;
+      }
+    }
+
+    // 品牌筛选
+    if (advancedFilters.brand && item.brand) {
+      if (!item.brand.toLowerCase().includes(advancedFilters.brand.toLowerCase())) {
+        return false;
+      }
+    }
+
+    // 数量范围筛选
+    if (advancedFilters.quantityRange) {
+      const [min, max] = advancedFilters.quantityRange.split('-').map(Number);
+      if (min && item.quantity < min) return false;
+      if (max && item.quantity > max) return false;
+    }
+
+    // 日期范围筛选
+    if (advancedFilters.dateRange.start || advancedFilters.dateRange.end) {
+      const itemDate = new Date(item.expiryDate);
+      if (advancedFilters.dateRange.start) {
+        const startDate = new Date(advancedFilters.dateRange.start);
+        if (itemDate < startDate) return false;
+      }
+      if (advancedFilters.dateRange.end) {
+        const endDate = new Date(advancedFilters.dateRange.end);
+        if (itemDate > endDate) return false;
+      }
+    }
+
+    return true;
   };
 
   // 筛选物品
@@ -59,7 +249,10 @@ const Items = () => {
         selectedMedicineTags.some(tag => item.medicineTags.includes(tag));
     }
     
-    return matchesSearch && matchesCategory && matchesMedicineTags;
+    // 高级筛选
+    const matchesAdvanced = matchesAdvancedFilters(item);
+    
+    return matchesSearch && matchesCategory && matchesMedicineTags && matchesAdvanced;
   });
 
   return (
@@ -67,8 +260,25 @@ const Items = () => {
       <div className="card">
         <h2>物品管理</h2>
         
+        {/* 分类统计卡片 */}
+        <div className="category-stats">
+          <div className="category-scroll">
+            {getCategoryStats().map((category, index) => (
+              <button 
+                key={category.name} 
+                onClick={() => setCategoryFilter(categoryFilter === category.name ? '' : category.name)}
+                className={`category-card ${categoryFilter === category.name ? 'active' : ''}`}
+              >
+                <div className="category-icon">{category.icon}</div>
+                <div className="category-name">{category.name}</div>
+                <div className="category-count">{category.count}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        
         {/* 搜索和筛选 */}
-        <div className="form-group">
+        <div className="form-group" ref={searchRef}>
           <label htmlFor="searchInput">搜索物品</label>
           <div style={{ position: 'relative' }}>
             <Search size={20} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
@@ -76,45 +286,256 @@ const Items = () => {
               type="text"
               id="searchInput"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
+              onFocus={() => setShowSearchHistory(true)}
               placeholder="搜索物品名称、品牌、分类、症状、备注..."
               style={{ paddingLeft: '40px' }}
             />
+            {searchTerm && (
+              <button
+                onClick={() => handleSearch('')}
+                style={{
+                  position: 'absolute',
+                  right: '12px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  color: '#666',
+                  fontSize: '18px'
+                }}
+              >
+                ×
+              </button>
+            )}
           </div>
-          <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
-            💡 可以搜索：物品名称、品牌、分类、症状（如感冒、高血压）、适用人群（如成人、儿童）、备注中的任何内容
-          </div>
-        </div>
-
-        <div className="form-group">
-          <label htmlFor="categoryFilter">分类筛选</label>
-          <select
-            id="categoryFilter"
-            value={categoryFilter}
-            onChange={handleCategoryFilterChange}
-          >
-            <option value="">所有分类</option>
-            {CATEGORIES.map(cat => (
-              <option key={cat.value} value={cat.value}>{cat.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {categoryFilter === '药品' && (
-          <div className="form-group">
-            <label>药品筛选</label>
-            <div className="tags-container">
-              {MEDICINE_TAGS.map(tag => (
-                <label key={tag.value} className="tag-checkbox">
-                  <input
-                    type="checkbox"
-                    value={tag.value}
-                    checked={selectedMedicineTags.includes(tag.value)}
-                    onChange={() => handleMedicineTagFilterChange(tag.value)}
-                  />
-                  {tag.label}
-                </label>
+          
+          {/* 搜索历史 */}
+          {showSearchHistory && searchHistory.length > 0 && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: 0,
+              right: 0,
+              background: 'white',
+              border: '1px solid #ddd',
+              borderRadius: '8px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+              zIndex: 1000,
+              maxHeight: '200px',
+              overflowY: 'auto'
+            }}>
+              <div style={{ padding: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '12px', color: '#666' }}>搜索历史</span>
+                <button
+                  onClick={clearSearchHistory}
+                  style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: '12px' }}
+                >
+                  清空
+                </button>
+              </div>
+              {searchHistory.map((term, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleSearch(term)}
+                  style={{
+                    padding: '10px',
+                    cursor: 'pointer',
+                    borderBottom: '1px solid #f5f5f5',
+                    fontSize: '14px'
+                  }}
+                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+                  onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                >
+                  {term}
+                </div>
               ))}
+            </div>
+          )}
+          
+        </div>
+
+        {/* 高级筛选 */}
+        <div style={{ marginTop: '20px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <button
+              onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
+              className="btn btn-secondary"
+              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              <Filter size={16} />
+              高级筛选
+              {hasActiveFilters && <span style={{ background: 'var(--sage-green)', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>}
+            </button>
+            
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                className="btn btn-secondary"
+                style={{ fontSize: '12px', padding: '6px 12px' }}
+              >
+                <X size={14} style={{ marginRight: '4px' }} />
+                清除筛选
+              </button>
+            )}
+          </div>
+
+          {showAdvancedFilter && (
+            <div style={{ 
+              padding: '15px', 
+              background: '#f8f9fa', 
+              borderRadius: '8px',
+              border: '1px solid #e9ecef'
+            }}>
+              <h4 style={{ margin: '0 0 15px 0', color: '#333' }}>高级筛选条件</h4>
+              
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                {/* 过期状态筛选 */}
+                <div className="form-group">
+                  <label>过期状态</label>
+                  <select
+                    value={advancedFilters.expiryStatus}
+                    onChange={(e) => handleAdvancedFilterChange('expiryStatus', e.target.value)}
+                  >
+                    <option value="">全部状态</option>
+                    <option value="normal">正常</option>
+                    <option value="expiring-soon">即将过期</option>
+                    <option value="expired">已过期</option>
+                  </select>
+                </div>
+
+                {/* 品牌筛选 */}
+                <div className="form-group">
+                  <label>品牌</label>
+                  <input
+                    type="text"
+                    value={advancedFilters.brand}
+                    onChange={(e) => handleAdvancedFilterChange('brand', e.target.value)}
+                    placeholder="输入品牌名称"
+                  />
+                </div>
+
+                {/* 数量范围筛选 */}
+                <div className="form-group">
+                  <label>数量范围</label>
+                  <select
+                    value={advancedFilters.quantityRange}
+                    onChange={(e) => handleAdvancedFilterChange('quantityRange', e.target.value)}
+                  >
+                    <option value="">全部数量</option>
+                    <option value="1-5">1-5个</option>
+                    <option value="6-10">6-10个</option>
+                    <option value="11-20">11-20个</option>
+                    <option value="21-">21个以上</option>
+                  </select>
+                </div>
+
+                {/* 过期日期范围 */}
+                <div className="form-group">
+                  <label>过期日期范围</label>
+                  <div style={{ display: 'flex', gap: '8px' }}>
+                    <input
+                      type="date"
+                      value={advancedFilters.dateRange.start}
+                      onChange={(e) => handleDateRangeChange('start', e.target.value)}
+                      placeholder="开始日期"
+                      style={{ flex: 1 }}
+                    />
+                    <span style={{ alignSelf: 'center', color: '#666' }}>至</span>
+                    <input
+                      type="date"
+                      value={advancedFilters.dateRange.end}
+                      onChange={(e) => handleDateRangeChange('end', e.target.value)}
+                      placeholder="结束日期"
+                      style={{ flex: 1 }}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 保存筛选条件 */}
+              <div style={{ marginTop: '15px', padding: '15px', background: 'white', borderRadius: '6px', border: '1px solid #dee2e6' }}>
+                <h5 style={{ margin: '0 0 10px 0', color: '#333' }}>保存筛选条件</h5>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={filterName}
+                    onChange={(e) => setFilterName(e.target.value)}
+                    placeholder="输入筛选条件名称"
+                    style={{ flex: 1, padding: '8px 12px', border: '1px solid #ddd', borderRadius: '4px' }}
+                  />
+                  <button
+                    onClick={saveFilter}
+                    className="btn btn-secondary"
+                    style={{ padding: '8px 16px', fontSize: '12px' }}
+                  >
+                    <Save size={14} style={{ marginRight: '4px' }} />
+                    保存
+                  </button>
+                </div>
+              </div>
+
+              {/* 已保存的筛选条件 */}
+              {savedFilters.length > 0 && (
+                <div style={{ marginTop: '15px' }}>
+                  <h5 style={{ margin: '0 0 10px 0', color: '#333' }}>已保存的筛选条件</h5>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                    {savedFilters.map((filter, index) => (
+                      <div key={index} style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px',
+                        padding: '6px 12px',
+                        background: 'white',
+                        borderRadius: '20px',
+                        border: '1px solid #dee2e6',
+                        fontSize: '12px'
+                      }}>
+                        <span>{filter.name}</span>
+                        <button
+                          onClick={() => applySavedFilter(filter)}
+                          className="btn btn-secondary"
+                          style={{ padding: '2px 6px', fontSize: '10px' }}
+                        >
+                          应用
+                        </button>
+                        <button
+                          onClick={() => deleteSavedFilter(index)}
+                          className="btn btn-danger"
+                          style={{ padding: '2px 6px', fontSize: '10px' }}
+                        >
+                          <X size={10} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 筛选结果统计 */}
+        {hasActiveFilters && (
+          <div style={{ 
+            marginTop: '15px', 
+            padding: '10px 15px', 
+            background: 'var(--sage-green-light)', 
+            borderRadius: '6px',
+            border: '1px solid var(--sage-green)'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '14px', color: 'var(--sage-green)' }}>
+                找到 {filteredItems.length} 个物品
+              </span>
+              <button
+                onClick={clearAllFilters}
+                className="btn btn-secondary"
+                style={{ padding: '4px 8px', fontSize: '12px' }}
+              >
+                清除筛选
+              </button>
             </div>
           </div>
         )}
@@ -122,7 +543,19 @@ const Items = () => {
         {/* 物品列表 */}
         <div className="items-list">
           {filteredItems.length === 0 ? (
-            <p>暂无物品</p>
+            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+              <Search size={48} style={{ marginBottom: '20px', opacity: 0.5 }} />
+              <p>没有找到符合条件的物品</p>
+              {hasActiveFilters && (
+                <button
+                  onClick={clearAllFilters}
+                  className="btn btn-secondary"
+                  style={{ marginTop: '10px' }}
+                >
+                  清除所有筛选条件
+                </button>
+              )}
+            </div>
           ) : (
             filteredItems.map((item, index) => {
               const expiryStatus = getExpiryStatus(item.expiryDate);
@@ -151,22 +584,22 @@ const Items = () => {
                       ))}
                     </div>
                   )}
-                  <button 
-                    className="btn btn-danger" 
-                    onClick={() => handleDelete(item.id)}
-                    style={{ marginTop: '10px' }}
-                  >
-                    <Trash2 size={16} style={{ marginRight: '8px' }} />
-                    删除
-                  </button>
+                  
+                  {/* 操作按钮 */}
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => handleDelete(item.id)}
+                      style={{ padding: '6px 12px', fontSize: '12px' }}
+                    >
+                      <Trash2 size={14} style={{ marginRight: '4px' }} />
+                      删除
+                    </button>
+                  </div>
                 </div>
               );
             })
           )}
-        </div>
-
-        <div style={{ marginTop: '20px', textAlign: 'center' }}>
-          <p>共找到 {filteredItems.length} 个物品</p>
         </div>
       </div>
     </div>

@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft } from 'lucide-react';
+import { Save, ArrowLeft, Camera } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
+import BarcodeScanner from '../../components/BarcodeScanner';
 
 const AddItem = () => {
   const navigate = useNavigate();
@@ -19,6 +20,7 @@ const AddItem = () => {
   
   const [selectedMedicineTags, setSelectedMedicineTags] = useState([]);
   const [errors, setErrors] = useState({});
+  const [showScanner, setShowScanner] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -57,6 +59,33 @@ const AddItem = () => {
         return [...prev, tag];
       }
     });
+  };
+
+  // 处理扫码结果
+  const handleScanResult = (barcode) => {
+    console.log('扫码结果:', barcode);
+    
+    // 根据条码前缀判断商品类型并自动填充
+    if (barcode.startsWith('690')) {
+      // 中国商品条码，根据条码规则判断商品类型
+      const categoryMap = {
+        '690123': '药品',
+        '690987': '护肤品',
+        '690555': '食品'
+      };
+      
+      const prefix = barcode.substring(0, 6);
+      const category = categoryMap[prefix] || '其他';
+      
+      setFormData(prev => ({
+        ...prev,
+        name: `商品${barcode.substring(8)}`,
+        category,
+        brand: `品牌${barcode.substring(6, 8)}`
+      }));
+    }
+    
+    setShowScanner(false);
   };
 
   const validateForm = () => {
@@ -101,19 +130,44 @@ const AddItem = () => {
 
   return (
     <div>
+      {showScanner && (
+        <BarcodeScanner
+          onScan={handleScanResult}
+          onClose={() => setShowScanner(false)}
+        />
+      )}
+      
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-          <button 
-            onClick={() => navigate('/')} 
-            className="btn btn-secondary"
-            style={{ marginRight: '15px' }}
-          >
+          <button onClick={() => navigate('/')} className="btn btn-secondary" style={{ marginRight: '10px' }}>
             <ArrowLeft size={16} />
           </button>
-          <h2>添加新物品</h2>
+          <h2>添加物品</h2>
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* 扫码按钮 */}
+          <div style={{ marginBottom: '20px', textAlign: 'center' }}>
+            <button
+              type="button"
+              onClick={() => setShowScanner(true)}
+              className="btn"
+              style={{ 
+                background: 'var(--sage-green)', 
+                color: 'white',
+                padding: '12px 24px',
+                fontSize: '1rem'
+              }}
+            >
+              <Camera size={20} style={{ marginRight: '8px' }} />
+              扫描条形码
+            </button>
+            <p style={{ marginTop: '8px', fontSize: '0.9rem', color: '#666' }}>
+              💡 点击扫描条形码，自动填充商品信息
+            </p>
+          </div>
+
+          {/* 物品名称 */}
           <div className="form-group">
             <label htmlFor="name">物品名称 *</label>
             <input
@@ -123,11 +177,12 @@ const AddItem = () => {
               value={formData.name}
               onChange={handleInputChange}
               placeholder="请输入物品名称"
-              required
+              className={errors.name ? 'error' : ''}
             />
-            {errors.name && <div style={{ color: 'var(--brick-red)', fontSize: '14px', marginTop: '5px' }}>{errors.name}</div>}
+            {errors.name && <span className="error-message">{errors.name}</span>}
           </div>
 
+          {/* 分类 */}
           <div className="form-group">
             <label htmlFor="category">分类 *</label>
             <select
@@ -135,38 +190,17 @@ const AddItem = () => {
               name="category"
               value={formData.category}
               onChange={handleCategoryChange}
-              required
+              className={errors.category ? 'error' : ''}
             >
               <option value="">请选择分类</option>
-              {CATEGORIES.map(cat => (
-                <option key={cat.value} value={cat.value}>{cat.label}</option>
+              {CATEGORIES.map(category => (
+                <option key={category.value} value={category.value}>{category.label}</option>
               ))}
             </select>
-            {errors.category && <div style={{ color: 'var(--brick-red)', fontSize: '14px', marginTop: '5px' }}>{errors.category}</div>}
+            {errors.category && <span className="error-message">{errors.category}</span>}
           </div>
 
-          {formData.category === '药品' && (
-            <div className="form-group">
-              <label>适用症状/人群</label>
-              <div className="tags-container">
-                {MEDICINE_TAGS.map(tag => (
-                  <label key={tag.value} className="tag-checkbox">
-                    <input
-                      type="checkbox"
-                      value={tag.value}
-                      checked={selectedMedicineTags.includes(tag.value)}
-                      onChange={() => handleMedicineTagChange(tag.value)}
-                    />
-                    {tag.label}
-                  </label>
-                ))}
-              </div>
-              <div style={{ marginTop: '10px', padding: '10px', background: '#E8F5E8', borderRadius: '6px', fontSize: '14px', color: 'var(--sage-green)' }}>
-                💡 <strong>提示：</strong>如果没有合适的选项，请在备注中填写其他症状或适用人群，例如"高血压"、"糖尿病"等，这些内容也可以在搜索中找到。
-              </div>
-            </div>
-          )}
-
+          {/* 品牌 */}
           <div className="form-group">
             <label htmlFor="brand">品牌</label>
             <input
@@ -179,6 +213,7 @@ const AddItem = () => {
             />
           </div>
 
+          {/* 数量 */}
           <div className="form-group">
             <label htmlFor="quantity">数量</label>
             <input
@@ -188,10 +223,11 @@ const AddItem = () => {
               value={formData.quantity}
               onChange={handleInputChange}
               min="1"
-              required
+              max="999"
             />
           </div>
 
+          {/* 过期日期 */}
           <div className="form-group">
             <label htmlFor="expiryDate">过期日期 *</label>
             <input
@@ -200,34 +236,65 @@ const AddItem = () => {
               name="expiryDate"
               value={formData.expiryDate}
               onChange={handleInputChange}
-              required
+              className={errors.expiryDate ? 'error' : ''}
             />
-            {errors.expiryDate && <div style={{ color: 'var(--brick-red)', fontSize: '14px', marginTop: '5px' }}>{errors.expiryDate}</div>}
+            {errors.expiryDate && <span className="error-message">{errors.expiryDate}</span>}
           </div>
 
+          {/* 药品标签（仅当分类为药品时显示） */}
+          {formData.category === '药品' && (
+            <div className="form-group">
+              <label>适用症状/人群</label>
+              <div className="tags-container">
+                {MEDICINE_TAGS.map(tag => (
+                  <label key={tag.value} className="tag-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedMedicineTags.includes(tag.value)}
+                      onChange={() => handleMedicineTagChange(tag.value)}
+                    />
+                    {tag.label}
+                  </label>
+                ))}
+              </div>
+              {selectedMedicineTags.length > 0 && (
+                <div className="selected-tags">
+                  {selectedMedicineTags.map(tag => (
+                    <span key={tag} className="selected-tag">{tag}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 备注 */}
           <div className="form-group">
             <label htmlFor="notes">备注</label>
-            <input
-              type="text"
+            <textarea
               id="notes"
               name="notes"
               value={formData.notes}
               onChange={handleInputChange}
-              placeholder="其他备注信息"
+              placeholder="请输入备注信息"
+              rows="3"
             />
+            {formData.category === '药品' && (
+              <div style={{ marginTop: '5px', fontSize: '12px', color: '#666' }}>
+                💡 如果没有合适的症状选项，请在备注中填写
+              </div>
+            )}
           </div>
 
-          <div style={{ display: 'flex', gap: '10px', marginTop: '20px' }}>
-            <button type="submit" className="btn">
-              <Save size={16} style={{ marginRight: '8px' }} />
+          {/* 提交按钮 */}
+          <div style={{ textAlign: 'center', marginTop: '30px' }}>
+            <button type="submit" className="btn" style={{ 
+              background: 'var(--sage-green)', 
+              color: 'white',
+              padding: '12px 40px',
+              fontSize: '1.1rem'
+            }}>
+              <Save size={20} style={{ marginRight: '8px' }} />
               保存物品
-            </button>
-            <button 
-              type="button" 
-              className="btn btn-secondary"
-              onClick={() => navigate('/')}
-            >
-              取消
             </button>
           </div>
         </form>

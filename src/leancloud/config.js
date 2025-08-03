@@ -3,11 +3,22 @@ import AV from 'leancloud-storage';
 
 // 初始化LeanCloud
 const initLeanCloud = () => {
-  AV.init({
-    appId: "你的AppID", // 需要替换为你的LeanCloud AppID
-    appKey: "你的AppKey", // 需要替换为你的LeanCloud AppKey
-    serverURL: "你的服务器地址" // 需要替换为你的LeanCloud服务器地址
-  });
+  console.log('🔧 正在初始化LeanCloud...');
+  
+  // 临时硬编码配置（测试用）
+  const config = {
+    appId: "D6XZYikpA2suStDXoZl0dI7q-gzGzoHsz",
+    appKey: "50BUt5vs3MsCOmPOlcSoU3Jo",
+    serverURL: "https://d6xzyikp.lc-cn-n1-shared.com"
+  };
+  
+  console.log('AppID:', config.appId);
+  console.log('AppKey: 已设置');
+  console.log('ServerURL:', config.serverURL);
+  
+  AV.init(config);
+  
+  console.log('✅ LeanCloud初始化完成');
 };
 
 // 导出初始化函数和AV实例

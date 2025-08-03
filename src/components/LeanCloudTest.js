@@ -26,7 +26,9 @@ const LeanCloudTest = () => {
     try {
       const testItems = generateTestData();
       for (const item of testItems) {
-        await addItemToLeanCloud(item);
+        // 从item中移除系统字段，避免LeanCloud错误
+        const { id, createdAt, updatedAt, ...leanCloudItemData } = item;
+        await addItemToLeanCloud(leanCloudItemData);
       }
       alert('测试数据已添加到LeanCloud！');
       fetchItemsFromLeanCloud();

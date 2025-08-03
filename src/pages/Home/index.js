@@ -1,99 +1,150 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Package } from 'lucide-react';
+import { Package, Plus, Eye } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
+import { getItemsFromLeanCloud, clearAllLeanCloudData } from '../../services/leancloudService';
 
 const Home = () => {
   const { items, getStats, addTestData, clearAllData, leanCloudConnected, syncStatus, syncToLeanCloud } = useLeanCloudItems();
   const stats = getStats();
+  const [isElderMode, setIsElderMode] = useState(false);
 
+  // 获取最近添加的物品
   const recentItems = items.slice(0, 5);
+
+  // 切换老年人模式
+  const toggleElderMode = () => {
+    setIsElderMode(!isElderMode);
+    // 可以在这里添加字体大小切换逻辑
+    if (!isElderMode) {
+      document.body.style.fontSize = '18px';
+      document.body.style.lineHeight = '1.8';
+      // 更新导航栏字体大小
+      const navbarElements = document.querySelectorAll('.navbar-tab, .navbar-title, .navbar-subtitle');
+      navbarElements.forEach(element => {
+        element.style.fontSize = '18px';
+      });
+    } else {
+      document.body.style.fontSize = '16px';
+      document.body.style.lineHeight = '1.6';
+      // 恢复导航栏字体大小
+      const navbarElements = document.querySelectorAll('.navbar-tab, .navbar-title, .navbar-subtitle');
+      navbarElements.forEach(element => {
+        element.style.fontSize = '';
+      });
+    }
+  };
+
+  // 导出数据功能
+  const exportData = (type = 'all') => {
+    let dataToExport = [];
+    
+    switch (type) {
+      case 'expired':
+        dataToExport = items.filter(item => getExpiryStatus(item.expiryDate) === 'expired');
+        break;
+      case 'expiring-soon':
+        dataToExport = items.filter(item => getExpiryStatus(item.expiryDate) === 'expiring-soon');
+        break;
+      case 'all':
+      default:
+        dataToExport = items;
+        break;
+    }
+
+    if (dataToExport.length === 0) {
+      alert('没有数据可以导出');
+      return;
+    }
+
+    // 格式化数据
+    const formattedData = dataToExport.map(item => ({
+      名称: item.name,
+      分类: item.category,
+      品牌: item.brand || '',
+      数量: item.quantity,
+      过期日期: item.expiryDate,
+      过期状态: getExpiryText(item.expiryDate).text,
+      备注: item.notes || '',
+      药品标签: item.medicineTags ? item.medicineTags.join(', ') : '',
+      创建时间: item.createdAt
+    }));
+
+    // 创建CSV内容
+    const headers = Object.keys(formattedData[0]);
+    const csvContent = [
+      headers.join(','),
+      ...formattedData.map(row => 
+        headers.map(header => {
+          const value = row[header] || '';
+          // 处理包含逗号的内容
+          return `"${value.toString().replace(/"/g, '""')}"`;
+        }).join(',')
+      )
+    ].join('\n');
+
+    // 创建下载链接
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `有期物品清单_${type === 'all' ? '全部' : type === 'expired' ? '已过期' : '即将过期'}_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div>
-      {/* 统计卡片 */}
-      <div className="stats">
-        <div className="stat-card">
-          <div className="stat-number">{stats.total}</div>
-          <div className="stat-label">总物品</div>
+      {/* 老年人模式切换 */}
+      <div className="card" style={{ marginBottom: '20px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h3>老年人模式</h3>
+          <button
+            onClick={toggleElderMode}
+            className="btn"
+            style={{ 
+              background: isElderMode ? 'var(--sage-green)' : '#f8f9fa',
+              color: isElderMode ? 'white' : '#333',
+              border: '1px solid var(--sage-green)',
+              padding: '8px 16px',
+              borderRadius: '6px',
+              fontSize: isElderMode ? '16px' : '14px'
+            }}
+          >
+            <Eye size={16} style={{ marginRight: '6px' }} />
+            {isElderMode ? '已开启' : '开启'}
+          </button>
         </div>
-        <div className="stat-card">
-          <div className="stat-number">{stats.expiringSoon}</div>
-          <div className="stat-label">即将过期</div>
-        </div>
-        <div className="stat-card">
-          <div className="stat-number">{stats.expired}</div>
-          <div className="stat-label">已过期</div>
-        </div>
+        {isElderMode && (
+          <p style={{ margin: '10px 0 0 0', fontSize: '14px', color: '#666' }}>
+            💡 老年人模式已开启，字体和按钮已放大，更适合老年人使用
+          </p>
+        )}
       </div>
 
-      {/* 数据同步状态 */}
-      <div className="card">
-        <h3>数据同步状态</h3>
-        <div style={{ marginBottom: '15px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
-            <span>LeanCloud连接：</span>
-            <span style={{ 
-              color: leanCloudConnected ? 'green' : 'red',
-              fontWeight: 'bold'
-            }}>
-              {leanCloudConnected ? '✅ 已连接' : '❌ 未连接'}
-            </span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <span>同步状态：</span>
-            <span style={{ 
-              color: syncStatus === 'idle' ? 'green' : syncStatus === 'syncing' ? 'orange' : 'red',
-              fontWeight: 'bold'
-            }}>
-              {syncStatus === 'idle' ? '✅ 已同步' : syncStatus === 'syncing' ? '⏳ 同步中' : '❌ 同步失败'}
-            </span>
-          </div>
-        </div>
-        
-        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-          <Link to="/add" className="btn">
-            <Plus size={20} style={{ marginRight: '8px' }} />
-            添加新物品
-          </Link>
-          <button className="btn btn-secondary" onClick={addTestData}>
-            添加测试数据
-          </button>
-          <button 
-            className="btn btn-secondary" 
-            onClick={clearAllData}
-            style={{ background: '#ff6b6b', color: 'white' }}
-          >
-            清空所有数据
-          </button>
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => syncToLeanCloud(items)}
-            style={{ background: syncStatus === 'syncing' ? '#ccc' : undefined }}
-            disabled={syncStatus === 'syncing'}
-          >
-            {syncStatus === 'syncing' ? '同步中...' : '手动同步到LeanCloud'}
-          </button>
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => window.location.reload()}
-            style={{ background: '#ffa500', color: 'white' }}
-          >
-            刷新页面
-          </button>
-          <button 
-            className="btn btn-secondary" 
-            onClick={() => {
-              localStorage.removeItem('youqi-items');
-              window.location.reload();
-            }}
-            style={{ background: '#dc3545', color: 'white' }}
-          >
-            强制清空并刷新
-          </button>
-        </div>
+      {/* 核心统计指标（突出展示） */}
+      <div className="core-stats">
+        <Link to="/items" className="stat-card core-stat">
+          <div className="stat-number">{stats.total}</div>
+          <div className="stat-label">总物品</div>
+        </Link>
+        <Link to="/expiring?filter=soon" className="stat-card core-stat">
+          <div className="stat-number">{stats.expiringSoon}</div>
+          <div className="stat-label">即将过期</div>
+        </Link>
+        <Link to="/expiring?filter=expired" className="stat-card core-stat">
+          <div className="stat-number">{stats.expired}</div>
+          <div className="stat-label">已过期</div>
+        </Link>
       </div>
+
+      {/* 悬浮添加按钮 */}
+      <Link to="/add" className="fab">
+        <Plus size={24} />
+      </Link>
 
       {/* 最近添加的物品 */}
       <div className="card">

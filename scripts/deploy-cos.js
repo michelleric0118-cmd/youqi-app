@@ -2,6 +2,9 @@ const COS = require('cos-nodejs-sdk-v5');
 const fs = require('fs');
 const path = require('path');
 
+// 加载环境变量
+require('dotenv').config();
+
 // 腾讯云COS配置
 const cos = new COS({
   SecretId: process.env.COS_SECRET_ID,
