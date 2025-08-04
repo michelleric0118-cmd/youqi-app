@@ -2,9 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Search, Trash2, Clock, AlertTriangle, Pill, Droplets, Utensils, Package2, Box, Filter, X, Save } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText, CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
+import toast from 'react-hot-toast';
+import EmptyState from '../../components/EmptyState';
 
 const Items = () => {
-  const { items, deleteItem } = useLeanCloudItems();
+  const { items, deleteItem, updateItem } = useLeanCloudItems();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -154,7 +156,33 @@ const Items = () => {
 
   const handleDelete = (id) => {
     if (window.confirm('确定要删除这个物品吗？')) {
-      deleteItem(id);
+      try {
+        deleteItem(id);
+        toast.success('🗑️ 物品已删除');
+      } catch (error) {
+        toast.error('❌ 删除失败，请重试');
+      }
+    }
+  };
+
+  const handleUseOne = async (id, currentQuantity) => {
+    if (currentQuantity <= 0) {
+      toast.error('❌ 数量不足');
+      return;
+    }
+    
+    try {
+      const newQuantity = currentQuantity - 1;
+      await updateItem(id, { quantity: newQuantity });
+      
+      if (newQuantity === 0) {
+        toast('📦 物品已用完！', { icon: '📦' });
+      } else {
+        toast.success('✅ 已使用一个！');
+      }
+    } catch (error) {
+      console.error('使用物品失败:', error);
+      toast.error('❌ 操作失败，请重试');
     }
   };
 
@@ -543,10 +571,10 @@ const Items = () => {
         {/* 物品列表 */}
         <div className="items-list">
           {filteredItems.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-              <Search size={48} style={{ marginBottom: '20px', opacity: 0.5 }} />
-              <p>没有找到符合条件的物品</p>
-              {hasActiveFilters && (
+            hasActiveFilters ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <Search size={48} style={{ marginBottom: '20px', opacity: 0.5 }} />
+                <p>没有找到符合条件的物品</p>
                 <button
                   onClick={clearAllFilters}
                   className="btn btn-secondary"
@@ -554,8 +582,14 @@ const Items = () => {
                 >
                   清除所有筛选条件
                 </button>
-              )}
-            </div>
+              </div>
+            ) : (
+              <EmptyState
+                message="这里还没有物品哦，开始记录你的第一个物品吧！"
+                onActionClick={() => window.location.href = '/add'}
+                actionText="添加第一个物品"
+              />
+            )
           ) : (
             filteredItems.map((item, index) => {
               const expiryStatus = getExpiryStatus(item.expiryDate);
@@ -587,6 +621,15 @@ const Items = () => {
                   
                   {/* 操作按钮 */}
                   <div style={{ marginTop: '10px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                    {item.quantity > 0 && (
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => handleUseOne(item.id, item.quantity)}
+                        style={{ padding: '6px 12px', fontSize: '12px' }}
+                      >
+                        -1
+                      </button>
+                    )}
                     <button
                       className="btn btn-danger"
                       onClick={() => handleDelete(item.id)}

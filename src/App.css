@@ -1023,3 +1023,17 @@ body[style*="font-size: 18px"] .navbar-subtitle {
     font-size: 0.8rem;
   }
 }
+
+/* 加载动画 */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

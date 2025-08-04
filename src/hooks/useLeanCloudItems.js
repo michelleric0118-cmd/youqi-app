@@ -6,6 +6,7 @@ import {
   deleteItemFromLeanCloud
 } from '../services/leancloudService';
 import { generateTestData } from '../utils/itemUtils';
+import toast from 'react-hot-toast';
 
 export const useLeanCloudItems = () => {
   const [items, setItems] = useState([]);
@@ -103,21 +104,17 @@ export const useLeanCloudItems = () => {
         id: Date.now().toString(),
         createdAt: new Date().toISOString()
       };
-      
       const updatedItems = [...items, newItem];
       setItems(updatedItems);
       localStorage.setItem('youqi-items', JSON.stringify(updatedItems));
-      
       if (leanCloudConnected) {
-        // 从newItem中移除系统字段，避免LeanCloud错误
         const { id, createdAt, updatedAt, ...leanCloudItemData } = newItem;
         await addItemToLeanCloud(leanCloudItemData);
       }
-      
+      toast.success('✅ 物品添加成功！');
       return newItem;
     } catch (error) {
-      console.error('添加物品失败:', error);
-      throw error;
+      toast.error('❌ 添加物品失败，请重试。');
     }
   };
 
@@ -126,13 +123,12 @@ export const useLeanCloudItems = () => {
       const updatedItems = items.filter(item => item.id !== itemId);
       setItems(updatedItems);
       localStorage.setItem('youqi-items', JSON.stringify(updatedItems));
-      
       if (leanCloudConnected) {
         await deleteItemFromLeanCloud(itemId);
       }
+      toast.success('🗑️ 物品已删除。'); // 确保用的是 toast.success
     } catch (error) {
-      console.error('删除物品失败:', error);
-      throw error;
+      toast.error('❌ 删除物品失败，请重试。');
     }
   };
 
@@ -143,15 +139,13 @@ export const useLeanCloudItems = () => {
       );
       setItems(updatedItems);
       localStorage.setItem('youqi-items', JSON.stringify(updatedItems));
-      
       if (leanCloudConnected) {
-        // 从updateData中移除updatedAt字段，避免LeanCloud错误
         const { updatedAt, ...leanCloudUpdateData } = updateData;
         await updateItemInLeanCloud(itemId, leanCloudUpdateData);
       }
+      toast.success('✅ 物品已更新！');
     } catch (error) {
-      console.error('更新物品失败:', error);
-      throw error;
+      toast.error('❌ 更新物品失败，请重试。');
     }
   };
 
@@ -281,4 +275,7 @@ export const useLeanCloudItems = () => {
     getExpiringItems,
     syncToLeanCloud
   };
-}; 
+};
+
+// 在 App.js 的 return 里加
+<button onClick={() => toast.success('测试提示')}>测试Toast</button>

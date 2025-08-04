@@ -4,6 +4,7 @@ import { Save, ArrowLeft, Camera } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
 import BarcodeScanner from '../../components/BarcodeScanner';
+import toast from 'react-hot-toast';
 
 const AddItem = () => {
   const navigate = useNavigate();
@@ -65,24 +66,33 @@ const AddItem = () => {
   const handleScanResult = (barcode) => {
     console.log('扫码结果:', barcode);
     
-    // 根据条码前缀判断商品类型并自动填充
-    if (barcode.startsWith('690')) {
-      // 中国商品条码，根据条码规则判断商品类型
-      const categoryMap = {
-        '690123': '药品',
-        '690987': '护肤品',
-        '690555': '食品'
-      };
-      
-      const prefix = barcode.substring(0, 6);
-      const category = categoryMap[prefix] || '其他';
-      
-      setFormData(prev => ({
-        ...prev,
-        name: `商品${barcode.substring(8)}`,
-        category,
-        brand: `品牌${barcode.substring(6, 8)}`
-      }));
+    try {
+      // 根据条码前缀判断商品类型并自动填充
+      if (barcode.startsWith('690')) {
+        // 中国商品条码，根据条码规则判断商品类型
+        const categoryMap = {
+          '690123': '药品',
+          '690987': '护肤品',
+          '690555': '食品'
+        };
+        
+        const prefix = barcode.substring(0, 6);
+        const category = categoryMap[prefix] || '其他';
+        
+        setFormData(prev => ({
+          ...prev,
+          name: `商品${barcode.substring(8)}`,
+          category,
+          brand: `品牌${barcode.substring(6, 8)}`
+        }));
+        
+        toast.success('✅ 扫码成功，已自动填充商品信息');
+      } else {
+        toast('📦 扫码成功，请手动完善商品信息');
+      }
+    } catch (error) {
+      console.error('处理扫码结果失败:', error);
+      toast.error('❌ 扫码处理失败，请重试');
     }
     
     setShowScanner(false);
@@ -107,25 +117,39 @@ const AddItem = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const showValidationErrors = (errors) => {
+    const errorMessages = Object.values(errors).filter(Boolean);
+    if (errorMessages.length > 0) {
+      toast.error(`❌ ${errorMessages[0]}`);
+    }
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
+      showValidationErrors(errors);
       return;
     }
 
-    // 构建备注信息
-    const tagsText = selectedMedicineTags.length > 0 ? `适用: ${selectedMedicineTags.join(', ')}` : '';
-    const notes = [tagsText, formData.notes].filter(Boolean).join(' | ');
+    try {
+      // 构建备注信息
+      const tagsText = selectedMedicineTags.length > 0 ? `适用: ${selectedMedicineTags.join(', ')}` : '';
+      const notes = [tagsText, formData.notes].filter(Boolean).join(' | ');
 
-    const newItem = {
-      ...formData,
-      notes,
-      medicineTags: selectedMedicineTags
-    };
+      const newItem = {
+        ...formData,
+        notes,
+        medicineTags: selectedMedicineTags
+      };
 
-    addItem(newItem);
-    navigate('/');
+      await addItem(newItem);
+      toast.success('✅ 物品添加成功！');
+      navigate('/');
+    } catch (error) {
+      console.error('添加物品失败:', error);
+      toast.error('❌ 添加失败，请重试');
+    }
   };
 
   return (

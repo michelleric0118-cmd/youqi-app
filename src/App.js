@@ -1,14 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
-import { Home, Package, Plus, Clock, BarChart3 } from 'lucide-react';
-import HomePage from './pages/Home';
-import ItemsPage from './pages/Items';
-import AddItemPage from './pages/AddItem';
-import ExpiringPage from './pages/Expiring';
-import StatisticsPage from './pages/Statistics';
-import LoginPage from './pages/Login';
-import LeanCloudTest from './components/LeanCloudTest';
+import { Home, Package, Plus, Clock, BarChart3, Loader2 } from 'lucide-react';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
+
+// 懒加载页面组件
+const HomePage = lazy(() => import('./pages/Home'));
+const ItemsPage = lazy(() => import('./pages/Items'));
+const AddItemPage = lazy(() => import('./pages/AddItem'));
+const ExpiringPage = lazy(() => import('./pages/Expiring'));
+const StatisticsPage = lazy(() => import('./pages/Statistics'));
+const LoginPage = lazy(() => import('./pages/Login'));
+const LeanCloudTest = lazy(() => import('./components/LeanCloudTest'));
+
+// 加载中的提示组件
+const LoadingSpinner = () => (
+  <div style={{ 
+    display: 'flex', 
+    justifyContent: 'center', 
+    alignItems: 'center', 
+    height: '200px',
+    flexDirection: 'column',
+    gap: '16px'
+  }}>
+    <Loader2 size={32} className="animate-spin" />
+    <p style={{ color: '#666', fontSize: '14px' }}>正在加载...</p>
+  </div>
+);
 
 // 导航栏组件
 const Navbar = () => {
@@ -83,6 +101,9 @@ function App() {
   return (
     <Router>
       <div className="App">
+        {/* Toast 通知容器 */}
+        <Toaster position="top-center" reverseOrder={false} />
+        
         <Routes>
           {/* 登录页面路由 */}
           <Route path="/login" element={
@@ -100,14 +121,16 @@ function App() {
 
                 {/* 主内容区域 */}
                 <div className="container">
-                  <Routes>
-                    <Route path="/" element={<HomePage />} />
-                    <Route path="/items" element={<ItemsPage />} />
-                    <Route path="/add" element={<AddItemPage />} />
-                    <Route path="/expiring" element={<ExpiringPage />} />
-                    <Route path="/statistics" element={<StatisticsPage />} />
-                    <Route path="/test" element={<LeanCloudTest />} />
-                  </Routes>
+                  <Suspense fallback={<LoadingSpinner />}>
+                    <Routes>
+                      <Route path="/" element={<HomePage />} />
+                      <Route path="/items" element={<ItemsPage />} />
+                      <Route path="/add" element={<AddItemPage />} />
+                      <Route path="/expiring" element={<ExpiringPage />} />
+                      <Route path="/statistics" element={<StatisticsPage />} />
+                      <Route path="/test" element={<LeanCloudTest />} />
+                    </Routes>
+                  </Suspense>
                 </div>
               </div>
             )
