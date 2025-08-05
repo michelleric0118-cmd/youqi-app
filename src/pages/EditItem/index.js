@@ -1,14 +1,15 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft, Camera } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
 import BarcodeScanner from '../../components/BarcodeScanner';
 import toast from 'react-hot-toast';
 
-const AddItem = () => {
+const EditItem = () => {
   const navigate = useNavigate();
-  const { addItem } = useLeanCloudItems();
+  const { id } = useParams();
+  const { items, updateItem } = useLeanCloudItems();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -22,6 +23,27 @@ const AddItem = () => {
   const [selectedMedicineTags, setSelectedMedicineTags] = useState([]);
   const [errors, setErrors] = useState({});
   const [showScanner, setShowScanner] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // 加载物品数据
+  useEffect(() => {
+    const item = items.find(item => item.id === id);
+    if (item) {
+      setFormData({
+        name: item.name || '',
+        category: item.category || '',
+        brand: item.brand || '',
+        quantity: item.quantity || 1,
+        expiryDate: item.expiryDate || '',
+        notes: item.notes || ''
+      });
+      setSelectedMedicineTags(item.medicineTags || []);
+    } else {
+      toast.error('❌ 物品不存在');
+      navigate('/items');
+    }
+    setLoading(false);
+  }, [id, items, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -137,19 +159,29 @@ const AddItem = () => {
       const tagsText = selectedMedicineTags.length > 0 ? `适用: ${selectedMedicineTags.join(', ')}` : '';
       const notes = [tagsText, formData.notes].filter(Boolean).join(' | ');
 
-      const newItem = {
+      const updateData = {
         ...formData,
         notes,
         medicineTags: selectedMedicineTags
       };
 
-      await addItem(newItem);
-      navigate('/');
+      await updateItem(id, updateData);
+      navigate('/items');
     } catch (error) {
-      console.error('添加物品失败:', error);
-      toast.error('❌ 添加失败，请重试');
+      console.error('更新物品失败:', error);
+      toast.error('❌ 更新失败，请重试');
     }
   };
+
+  if (loading) {
+    return (
+      <div className="card">
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p>正在加载物品信息...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -162,10 +194,10 @@ const AddItem = () => {
       
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
-          <button onClick={() => navigate('/')} className="btn btn-secondary" style={{ marginRight: '10px' }}>
+          <button onClick={() => navigate('/items')} className="btn btn-secondary" style={{ marginRight: '10px' }}>
             <ArrowLeft size={16} />
           </button>
-          <h2>添加物品</h2>
+          <h2>编辑物品</h2>
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -185,7 +217,6 @@ const AddItem = () => {
               <Camera size={20} style={{ marginRight: '8px' }} />
               扫描条形码
             </button>
-
           </div>
 
           {/* 物品名称 */}
@@ -299,7 +330,6 @@ const AddItem = () => {
               placeholder="请输入备注信息"
               rows="3"
             />
-
           </div>
 
           {/* 提交按钮 */}
@@ -311,7 +341,7 @@ const AddItem = () => {
               fontSize: '1.1rem'
             }}>
               <Save size={20} style={{ marginRight: '8px' }} />
-              保存物品
+              保存修改
             </button>
           </div>
         </form>
@@ -320,4 +350,4 @@ const AddItem = () => {
   );
 };
 
-export default AddItem; 
+export default EditItem; 

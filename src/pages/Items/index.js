@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Trash2, Clock, AlertTriangle, Pill, Droplets, Utensils, Package2, Box, Filter, X, Save } from 'lucide-react';
+import { Search, Trash2, Clock, AlertTriangle, Pill, Droplets, Utensils, Package2, Box, Filter, X, Save, Edit } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText, CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
 import toast from 'react-hot-toast';
 import EmptyState from '../../components/EmptyState';
+import { useNavigate } from 'react-router-dom';
 
 const Items = () => {
   const { items, deleteItem, updateItem } = useLeanCloudItems();
+  const navigate = useNavigate();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
@@ -158,7 +160,6 @@ const Items = () => {
     if (window.confirm('确定要删除这个物品吗？')) {
       try {
         deleteItem(id);
-        toast.success('🗑️ 物品已删除');
       } catch (error) {
         toast.error('❌ 删除失败，请重试');
       }
@@ -596,7 +597,12 @@ const Items = () => {
               const expiryInfo = getExpiryText(item.expiryDate);
               
               return (
-                <div key={`${item.id}-${index}`} className={`item ${expiryStatus}`}>
+                <div 
+                  key={`${item.id}-${index}`} 
+                  className={`item ${expiryStatus}`}
+                  style={{ cursor: 'pointer' }}
+                  onClick={() => navigate(`/edit/${item.id}`)}
+                >
                   <div className="item-header">
                     <div className="item-name">{item.name}</div>
                     <div className="item-category">{item.category}</div>
@@ -620,7 +626,10 @@ const Items = () => {
                   )}
                   
                   {/* 操作按钮 */}
-                  <div style={{ marginTop: '10px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <div 
+                    style={{ marginTop: '10px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}
+                    onClick={(e) => e.stopPropagation()} // 防止触发卡片的点击事件
+                  >
                     {item.quantity > 0 && (
                       <button
                         className="btn btn-secondary"
@@ -630,6 +639,19 @@ const Items = () => {
                         -1
                       </button>
                     )}
+                    <button
+                      className="btn"
+                      onClick={() => navigate(`/edit/${item.id}`)}
+                      style={{ 
+                        padding: '6px 12px', 
+                        fontSize: '12px',
+                        background: 'var(--sage-green)',
+                        color: 'white'
+                      }}
+                    >
+                      <Edit size={14} style={{ marginRight: '4px' }} />
+                      编辑
+                    </button>
                     <button
                       className="btn btn-danger"
                       onClick={() => handleDelete(item.id)}

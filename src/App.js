@@ -8,6 +8,7 @@ import './App.css';
 const HomePage = lazy(() => import('./pages/Home'));
 const ItemsPage = lazy(() => import('./pages/Items'));
 const AddItemPage = lazy(() => import('./pages/AddItem'));
+const EditItemPage = lazy(() => import('./pages/EditItem'));
 const ExpiringPage = lazy(() => import('./pages/Expiring'));
 const StatisticsPage = lazy(() => import('./pages/Statistics'));
 const LoginPage = lazy(() => import('./pages/Login'));
@@ -123,12 +124,13 @@ function App() {
                 <div className="container">
                   <Suspense fallback={<LoadingSpinner />}>
                     <Routes>
-                      <Route path="/" element={<HomePage />} />
-                      <Route path="/items" element={<ItemsPage />} />
-                      <Route path="/add" element={<AddItemPage />} />
-                      <Route path="/expiring" element={<ExpiringPage />} />
-                      <Route path="/statistics" element={<StatisticsPage />} />
-                      <Route path="/test" element={<LeanCloudTest />} />
+                                          <Route path="/" element={<HomePage />} />
+                    <Route path="/items" element={<ItemsPage />} />
+                    <Route path="/add" element={<AddItemPage />} />
+                    <Route path="/edit/:id" element={<EditItemPage />} />
+                    <Route path="/expiring" element={<ExpiringPage />} />
+                    <Route path="/statistics" element={<StatisticsPage />} />
+                    <Route path="/test" element={<LeanCloudTest />} />
                     </Routes>
                   </Suspense>
                 </div>
