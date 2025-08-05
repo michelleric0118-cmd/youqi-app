@@ -111,10 +111,10 @@ export const useLeanCloudItems = () => {
         const { id, createdAt, updatedAt, ...leanCloudItemData } = newItem;
         await addItemToLeanCloud(leanCloudItemData);
       }
-      toast.success('✅ 物品添加成功！');
+      toast.success('物品添加成功！');
       return newItem;
     } catch (error) {
-      toast.error('❌ 添加物品失败，请重试。');
+      toast.error('添加物品失败，请重试');
     }
   };
 
@@ -126,9 +126,9 @@ export const useLeanCloudItems = () => {
       if (leanCloudConnected) {
         await deleteItemFromLeanCloud(itemId);
       }
-      toast.success('🗑️ 物品已删除。'); // 确保用的是 toast.success
+      toast.success('物品已删除');
     } catch (error) {
-      toast.error('❌ 删除物品失败，请重试。');
+      toast.error('删除物品失败，请重试');
     }
   };
 
@@ -143,9 +143,9 @@ export const useLeanCloudItems = () => {
         const { updatedAt, ...leanCloudUpdateData } = updateData;
         await updateItemInLeanCloud(itemId, leanCloudUpdateData);
       }
-      toast.success('✅ 物品已更新！');
+      toast.success('物品已更新');
     } catch (error) {
-      toast.error('❌ 更新物品失败，请重试。');
+      toast.error('更新物品失败，请重试');
     }
   };
 

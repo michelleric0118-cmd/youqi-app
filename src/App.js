@@ -103,7 +103,36 @@ function App() {
     <Router>
       <div className="App">
         {/* Toast 通知容器 */}
-        <Toaster position="top-center" reverseOrder={false} />
+        <Toaster 
+          position="top-center" 
+          reverseOrder={false}
+          toastOptions={{
+            style: {
+              fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", sans-serif',
+              fontSize: '14px',
+              color: '#2c2c2c',
+              background: 'white',
+              border: '1px solid rgba(0,0,0,0.05)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.08)',
+              borderRadius: '8px',
+              padding: '12px 16px'
+            },
+            success: {
+              style: {
+                background: 'var(--sage-green-light)',
+                color: 'var(--sage-green-dark)',
+                border: '1px solid var(--sage-green)'
+              }
+            },
+            error: {
+              style: {
+                background: '#fef2f2',
+                color: '#dc2626',
+                border: '1px solid #fecaca'
+              }
+            }
+          }}
+        />
         
         <Routes>
           {/* 登录页面路由 */}

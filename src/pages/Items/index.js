@@ -161,14 +161,14 @@ const Items = () => {
       try {
         deleteItem(id);
       } catch (error) {
-        toast.error('❌ 删除失败，请重试');
+        toast.error('删除失败，请重试');
       }
     }
   };
 
   const handleUseOne = async (id, currentQuantity) => {
     if (currentQuantity <= 0) {
-      toast.error('❌ 数量不足');
+      toast.error('数量不足');
       return;
     }
     
@@ -177,13 +177,13 @@ const Items = () => {
       await updateItem(id, { quantity: newQuantity });
       
       if (newQuantity === 0) {
-        toast('📦 物品已用完！', { icon: '📦' });
+        toast.success('物品已用完');
       } else {
-        toast.success('✅ 已使用一个！');
+        toast.success('已使用一个');
       }
     } catch (error) {
       console.error('使用物品失败:', error);
-      toast.error('❌ 操作失败，请重试');
+      toast.error('操作失败，请重试');
     }
   };
 

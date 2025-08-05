@@ -39,7 +39,7 @@ const EditItem = () => {
       });
       setSelectedMedicineTags(item.medicineTags || []);
     } else {
-      toast.error('❌ 物品不存在');
+      toast.error('物品不存在');
       navigate('/items');
     }
     setLoading(false);
@@ -108,13 +108,13 @@ const EditItem = () => {
           brand: `品牌${barcode.substring(6, 8)}`
         }));
         
-        toast.success('✅ 扫码成功，已自动填充商品信息');
+        toast.success('扫码成功，已自动填充商品信息');
       } else {
-        toast('📦 扫码成功，请手动完善商品信息');
+        toast.success('扫码成功，请手动完善商品信息');
       }
     } catch (error) {
       console.error('处理扫码结果失败:', error);
-      toast.error('❌ 扫码处理失败，请重试');
+      toast.error('扫码处理失败，请重试');
     }
     
     setShowScanner(false);
@@ -142,7 +142,7 @@ const EditItem = () => {
   const showValidationErrors = (errors) => {
     const errorMessages = Object.values(errors).filter(Boolean);
     if (errorMessages.length > 0) {
-      toast.error(`❌ ${errorMessages[0]}`);
+      toast.error(errorMessages[0]);
     }
   };
 
@@ -169,7 +169,7 @@ const EditItem = () => {
       navigate('/items');
     } catch (error) {
       console.error('更新物品失败:', error);
-      toast.error('❌ 更新失败，请重试');
+      toast.error('更新失败，请重试');
     }
   };
 
