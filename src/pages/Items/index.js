@@ -15,6 +15,8 @@ const Items = () => {
   const [selectedMedicineTags, setSelectedMedicineTags] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
+  const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
   
   // 高级筛选状态
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
@@ -34,11 +36,67 @@ const Items = () => {
   // 从URL参数初始化筛选条件
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
+    
+    // 解析filter参数（来自统计页面跳转）
+    const filterFromUrl = urlParams.get('filter');
+    if (filterFromUrl) {
+      switch (filterFromUrl) {
+        case 'expired':
+          setAdvancedFilters(prev => ({ ...prev, expiryStatus: 'expired' }));
+          break;
+        case 'expiring-soon':
+          setAdvancedFilters(prev => ({ ...prev, expiryStatus: 'expiring-soon' }));
+          break;
+        case 'normal':
+          setAdvancedFilters(prev => ({ ...prev, expiryStatus: 'normal' }));
+          break;
+        case 'all':
+          // 显示所有物品，不设置筛选条件
+          break;
+        default:
+          break;
+      }
+    }
+    
+    // 解析category参数
     const categoryFromUrl = urlParams.get('category');
     if (categoryFromUrl) {
       setCategoryFilter(decodeURIComponent(categoryFromUrl));
     }
+    
+    // 解析search参数
+    const searchFromUrl = urlParams.get('search');
+    if (searchFromUrl) {
+      setSearchTerm(decodeURIComponent(searchFromUrl));
+    }
+    
+    // 解析brand参数
+    const brandFromUrl = urlParams.get('brand');
+    if (brandFromUrl) {
+      setAdvancedFilters(prev => ({ ...prev, brand: decodeURIComponent(brandFromUrl) }));
+    }
   }, []);
+
+  // 同步筛选条件到URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams();
+    
+    if (searchTerm) {
+      urlParams.set('search', searchTerm);
+    }
+    if (categoryFilter) {
+      urlParams.set('category', categoryFilter);
+    }
+    if (advancedFilters.expiryStatus) {
+      urlParams.set('filter', advancedFilters.expiryStatus);
+    }
+    if (advancedFilters.brand) {
+      urlParams.set('brand', advancedFilters.brand);
+    }
+    
+    const newUrl = urlParams.toString() ? `?${urlParams.toString()}` : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
+  }, [searchTerm, categoryFilter, advancedFilters.expiryStatus, advancedFilters.brand]);
 
   // 获取分类统计
   const getCategoryStats = () => {
@@ -162,10 +220,66 @@ const Items = () => {
     if (term.trim() && !searchHistory.includes(term.trim())) {
       setSearchHistory(prev => [term.trim(), ...prev.slice(0, 4)]);
     }
+    
+    // 更新URL参数
+    const urlParams = new URLSearchParams(window.location.search);
+    if (term.trim()) {
+      urlParams.set('search', term.trim());
+    } else {
+      urlParams.delete('search');
+    }
+    const newUrl = urlParams.toString() ? `?${urlParams.toString()}` : window.location.pathname;
+    window.history.replaceState({}, '', newUrl);
   };
 
   const clearSearchHistory = () => {
     setSearchHistory([]);
+  };
+
+  // 生成搜索建议
+  const generateSearchSuggestions = (input) => {
+    if (!input.trim()) {
+      setSearchSuggestions([]);
+      return;
+    }
+
+    const suggestions = [];
+    const inputLower = input.toLowerCase();
+
+    // 从物品名称中生成建议
+    items.forEach(item => {
+      if (item.name.toLowerCase().includes(inputLower) && !suggestions.includes(item.name)) {
+        suggestions.push(item.name);
+      }
+    });
+
+    // 从品牌中生成建议
+    items.forEach(item => {
+      if (item.brand && item.brand.toLowerCase().includes(inputLower) && !suggestions.includes(item.brand)) {
+        suggestions.push(item.brand);
+      }
+    });
+
+    // 从分类中生成建议
+    const categories = ['药品', '护肤品', '食品', '日用品', '其他'];
+    categories.forEach(category => {
+      if (category.toLowerCase().includes(inputLower) && !suggestions.includes(category)) {
+        suggestions.push(category);
+      }
+    });
+
+    // 从药品标签中生成建议
+    items.forEach(item => {
+      if (item.medicineTags) {
+        item.medicineTags.forEach(tag => {
+          if (tag.toLowerCase().includes(inputLower) && !suggestions.includes(tag)) {
+            suggestions.push(tag);
+          }
+        });
+      }
+    });
+
+    setSearchSuggestions(suggestions.slice(0, 8)); // 限制建议数量
   };
 
   // 点击外部关闭搜索历史
@@ -282,8 +396,28 @@ const Items = () => {
               type="text"
               id="searchInput"
               value={searchTerm}
-              onChange={(e) => handleSearch(e.target.value)}
-              onFocus={() => setShowSearchHistory(true)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearchTerm(value);
+                generateSearchSuggestions(value);
+                setShowSearchSuggestions(true);
+                setShowSearchHistory(false);
+              }}
+              onFocus={() => {
+                if (searchHistory.length > 0) {
+                  setShowSearchHistory(true);
+                }
+                if (searchTerm) {
+                  setShowSearchSuggestions(true);
+                }
+              }}
+              onBlur={() => {
+                // 延迟关闭，让用户有时间点击建议
+                setTimeout(() => {
+                  setShowSearchHistory(false);
+                  setShowSearchSuggestions(false);
+                }, 200);
+              }}
               placeholder="搜索物品名称、品牌、分类、症状、备注..."
               style={{ paddingLeft: '40px' }}
             />
@@ -307,8 +441,8 @@ const Items = () => {
             )}
           </div>
           
-          {/* 搜索历史 */}
-          {showSearchHistory && searchHistory.length > 0 && (
+          {/* 搜索历史和搜索建议 */}
+          {(showSearchHistory && searchHistory.length > 0) || (showSearchSuggestions && searchSuggestions.length > 0) ? (
             <div style={{
               position: 'absolute',
               top: '100%',
@@ -319,37 +453,168 @@ const Items = () => {
               borderRadius: '8px',
               boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
               zIndex: 1000,
-              maxHeight: '200px',
+              maxHeight: '300px',
               overflowY: 'auto'
             }}>
-              <div style={{ padding: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '12px', color: '#666' }}>搜索历史</span>
-                <button
-                  onClick={clearSearchHistory}
-                  style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: '12px' }}
-                >
-                  清空
-                </button>
-              </div>
-              {searchHistory.map((term, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleSearch(term)}
-                  style={{
-                    padding: '10px',
-                    cursor: 'pointer',
-                    borderBottom: '1px solid #f5f5f5',
-                    fontSize: '14px'
-                  }}
-                  onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
-                  onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
-                >
-                  {term}
-                </div>
-              ))}
+              {/* 搜索历史 */}
+              {showSearchHistory && searchHistory.length > 0 && (
+                <>
+                  <div style={{ padding: '10px', borderBottom: '1px solid #eee', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '12px', color: '#666' }}>搜索历史</span>
+                    <button
+                      onClick={clearSearchHistory}
+                      style={{ background: 'none', border: 'none', color: '#999', cursor: 'pointer', fontSize: '12px' }}
+                    >
+                      清空
+                    </button>
+                  </div>
+                  {searchHistory.map((term, index) => (
+                    <div
+                      key={`history-${index}`}
+                      onClick={() => handleSearch(term)}
+                      style={{
+                        padding: '10px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f5f5f5',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                    >
+                      <Search size={14} style={{ color: '#999' }} />
+                      {term}
+                    </div>
+                  ))}
+                </>
+              )}
+
+              {/* 搜索建议 */}
+              {showSearchSuggestions && searchSuggestions.length > 0 && (
+                <>
+                  {showSearchHistory && searchHistory.length > 0 && (
+                    <div style={{ padding: '8px', borderBottom: '1px solid #eee' }}>
+                      <span style={{ fontSize: '12px', color: '#666' }}>搜索建议</span>
+                    </div>
+                  )}
+                  {searchSuggestions.map((suggestion, index) => (
+                    <div
+                      key={`suggestion-${index}`}
+                      onClick={() => handleSearch(suggestion)}
+                      style={{
+                        padding: '10px',
+                        cursor: 'pointer',
+                        borderBottom: '1px solid #f5f5f5',
+                        fontSize: '14px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                      }}
+                      onMouseEnter={(e) => e.target.style.backgroundColor = '#f5f5f5'}
+                      onMouseLeave={(e) => e.target.style.backgroundColor = 'white'}
+                    >
+                      <div style={{ width: '14px', height: '14px', borderRadius: '50%', background: '#8A9A5B', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'white' }}></div>
+                      </div>
+                      {suggestion}
+                    </div>
+                  ))}
+                </>
+              )}
             </div>
-          )}
+          ) : null}
           
+        </div>
+
+        {/* 快速筛选按钮组 */}
+        <div style={{ marginTop: '20px', marginBottom: '15px' }}>
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+            <span style={{ fontSize: '14px', color: '#666', marginRight: '10px' }}>快速筛选:</span>
+            
+            {/* 过期状态快速筛选 */}
+            <button
+              onClick={() => handleAdvancedFilterChange('expiryStatus', '')}
+              style={{
+                padding: '6px 12px',
+                background: !advancedFilters.expiryStatus ? '#8A9A5B' : '#f0f0f0',
+                color: !advancedFilters.expiryStatus ? 'white' : '#666',
+                border: 'none',
+                borderRadius: '16px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              全部
+            </button>
+            <button
+              onClick={() => handleAdvancedFilterChange('expiryStatus', 'expired')}
+              style={{
+                padding: '6px 12px',
+                background: advancedFilters.expiryStatus === 'expired' ? '#CB4154' : '#f0f0f0',
+                color: advancedFilters.expiryStatus === 'expired' ? 'white' : '#666',
+                border: 'none',
+                borderRadius: '16px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              已过期
+            </button>
+            <button
+              onClick={() => handleAdvancedFilterChange('expiryStatus', 'expiring-soon')}
+              style={{
+                padding: '6px 12px',
+                background: advancedFilters.expiryStatus === 'expiring-soon' ? '#E89F65' : '#f0f0f0',
+                color: advancedFilters.expiryStatus === 'expiring-soon' ? 'white' : '#666',
+                border: 'none',
+                borderRadius: '16px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              即将过期
+            </button>
+            <button
+              onClick={() => handleAdvancedFilterChange('expiryStatus', 'normal')}
+              style={{
+                padding: '6px 12px',
+                background: advancedFilters.expiryStatus === 'normal' ? '#8A9A5B' : '#f0f0f0',
+                color: advancedFilters.expiryStatus === 'normal' ? 'white' : '#666',
+                border: 'none',
+                borderRadius: '16px',
+                fontSize: '12px',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              正常
+            </button>
+            
+            {/* 清除筛选按钮 */}
+            {hasActiveFilters && (
+              <button
+                onClick={clearAllFilters}
+                style={{
+                  padding: '6px 12px',
+                  background: '#f8f9fa',
+                  color: '#666',
+                  border: '1px solid #ddd',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  marginLeft: 'auto'
+                }}
+              >
+                清除筛选
+              </button>
+            )}
+          </div>
         </div>
 
         {/* 高级筛选 */}
@@ -357,33 +622,56 @@ const Items = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
             <button
               onClick={() => setShowAdvancedFilter(!showAdvancedFilter)}
-              className="btn btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '8px 16px',
+                background: showAdvancedFilter ? '#8A9A5B' : '#f8f9fa',
+                color: showAdvancedFilter ? 'white' : '#666',
+                border: '1px solid #ddd',
+                borderRadius: '8px',
+                cursor: 'pointer',
+                fontSize: '14px',
+                transition: 'all 0.2s ease'
+              }}
             >
               <Filter size={16} />
               高级筛选
-              {hasActiveFilters && <span style={{ background: 'var(--sage-green)', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>}
+              {hasActiveFilters && <span style={{ background: showAdvancedFilter ? 'white' : '#8A9A5B', color: showAdvancedFilter ? '#8A9A5B' : 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>}
             </button>
             
-
+            {/* 筛选结果统计 */}
+            <div style={{ fontSize: '14px', color: '#666' }}>
+              共找到 {filteredItems.length} 个物品
+            </div>
           </div>
 
           {showAdvancedFilter && (
             <div style={{ 
-              padding: '15px', 
-              background: '#f8f9fa', 
-              borderRadius: '8px',
-              border: '1px solid #e9ecef'
+              padding: '20px', 
+              background: 'white', 
+              borderRadius: '12px',
+              border: '1px solid #e9ecef',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
             }}>
-              <h4 style={{ margin: '0 0 15px 0', color: '#333' }}>高级筛选条件</h4>
+              <h4 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '16px', fontWeight: '600' }}>高级筛选条件</h4>
               
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '20px' }}>
                 {/* 过期状态筛选 */}
-                <div className="form-group">
-                  <label>过期状态</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: '500', color: '#333' }}>过期状态</label>
                   <select
                     value={advancedFilters.expiryStatus}
                     onChange={(e) => handleAdvancedFilterChange('expiryStatus', e.target.value)}
+                    style={{
+                      padding: '10px 12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer'
+                    }}
                   >
                     <option value="">全部状态</option>
                     <option value="normal">正常</option>
@@ -393,22 +681,37 @@ const Items = () => {
                 </div>
 
                 {/* 品牌筛选 */}
-                <div className="form-group">
-                  <label>品牌</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: '500', color: '#333' }}>品牌</label>
                   <input
                     type="text"
                     value={advancedFilters.brand}
                     onChange={(e) => handleAdvancedFilterChange('brand', e.target.value)}
                     placeholder="输入品牌名称"
+                    style={{
+                      padding: '10px 12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'white'
+                    }}
                   />
                 </div>
 
                 {/* 数量范围筛选 */}
-                <div className="form-group">
-                  <label>数量范围</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: '500', color: '#333' }}>数量范围</label>
                   <select
                     value={advancedFilters.quantityRange}
                     onChange={(e) => handleAdvancedFilterChange('quantityRange', e.target.value)}
+                    style={{
+                      padding: '10px 12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '8px',
+                      fontSize: '14px',
+                      background: 'white',
+                      cursor: 'pointer'
+                    }}
                   >
                     <option value="">全部数量</option>
                     <option value="1-5">1-5个</option>
@@ -419,23 +722,37 @@ const Items = () => {
                 </div>
 
                 {/* 过期日期范围 */}
-                <div className="form-group">
-                  <label>过期日期范围</label>
-                  <div style={{ display: 'flex', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <label style={{ fontSize: '14px', fontWeight: '500', color: '#333' }}>过期日期范围</label>
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     <input
                       type="date"
                       value={advancedFilters.dateRange.start}
                       onChange={(e) => handleDateRangeChange('start', e.target.value)}
                       placeholder="开始日期"
-                      style={{ flex: 1 }}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: 'white'
+                      }}
                     />
-                    <span style={{ alignSelf: 'center', color: '#666' }}>至</span>
+                    <span style={{ color: '#666', fontSize: '14px' }}>至</span>
                     <input
                       type="date"
                       value={advancedFilters.dateRange.end}
                       onChange={(e) => handleDateRangeChange('end', e.target.value)}
                       placeholder="结束日期"
-                      style={{ flex: 1 }}
+                      style={{
+                        flex: 1,
+                        padding: '10px 12px',
+                        border: '1px solid #ddd',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        background: 'white'
+                      }}
                     />
                   </div>
                 </div>
@@ -450,15 +767,73 @@ const Items = () => {
         {hasActiveFilters && (
           <div style={{ 
             marginTop: '15px', 
-            padding: '10px 15px', 
-            background: 'var(--sage-green-light)', 
-            borderRadius: '6px',
-            border: '1px solid var(--sage-green)'
+            padding: '15px', 
+            background: '#f8f9fa', 
+            borderRadius: '8px',
+            border: '1px solid #e9ecef'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <span style={{ fontSize: '14px', color: 'var(--sage-green)' }}>
-                找到 {filteredItems.length} 个物品
-              </span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Search size={16} style={{ color: '#8A9A5B' }} />
+                <span style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>
+                  找到 {filteredItems.length} 个物品
+                </span>
+                {items.length > 0 && (
+                  <span style={{ fontSize: '12px', color: '#666' }}>
+                    (共 {items.length} 个)
+                  </span>
+                )}
+              </div>
+              
+              {/* 显示当前筛选条件 */}
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                {searchTerm && (
+                  <span style={{ 
+                    padding: '4px 8px', 
+                    background: '#8A9A5B', 
+                    color: 'white', 
+                    borderRadius: '12px', 
+                    fontSize: '12px' 
+                  }}>
+                    搜索: {searchTerm}
+                  </span>
+                )}
+                {categoryFilter && (
+                  <span style={{ 
+                    padding: '4px 8px', 
+                    background: '#E89F65', 
+                    color: 'white', 
+                    borderRadius: '12px', 
+                    fontSize: '12px' 
+                  }}>
+                    分类: {categoryFilter}
+                  </span>
+                )}
+                {advancedFilters.expiryStatus && (
+                  <span style={{ 
+                    padding: '4px 8px', 
+                    background: advancedFilters.expiryStatus === 'expired' ? '#CB4154' : 
+                              advancedFilters.expiryStatus === 'expiring-soon' ? '#E89F65' : '#8A9A5B', 
+                    color: 'white', 
+                    borderRadius: '12px', 
+                    fontSize: '12px' 
+                  }}>
+                    状态: {advancedFilters.expiryStatus === 'expired' ? '已过期' : 
+                           advancedFilters.expiryStatus === 'expiring-soon' ? '即将过期' : '正常'}
+                  </span>
+                )}
+                {advancedFilters.brand && (
+                  <span style={{ 
+                    padding: '4px 8px', 
+                    background: '#4A4A4A', 
+                    color: 'white', 
+                    borderRadius: '12px', 
+                    fontSize: '12px' 
+                  }}>
+                    品牌: {advancedFilters.brand}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         )}
