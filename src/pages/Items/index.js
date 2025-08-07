@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Trash2, Clock, AlertTriangle, Pill, Droplets, Utensils, Package2, Box, Filter, X, Save, Edit } from 'lucide-react';
+import { Search, Trash2, Clock, AlertTriangle, Pill, Droplets, Utensils, Package2, Box, Filter, Edit } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText, CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
 import toast from 'react-hot-toast';
@@ -27,8 +27,7 @@ const Items = () => {
       end: ''
     }
   });
-  const [savedFilters, setSavedFilters] = useState([]);
-  const [filterName, setFilterName] = useState('');
+
   
   const searchRef = useRef(null);
 
@@ -122,39 +121,7 @@ const Items = () => {
     }));
   };
 
-  // 保存筛选条件
-  const saveFilter = () => {
-    if (!filterName.trim()) {
-      alert('请输入筛选条件名称');
-      return;
-    }
 
-    const filterConfig = {
-      name: filterName,
-      searchTerm,
-      categoryFilter,
-      selectedMedicineTags,
-      advancedFilters,
-      createdAt: new Date().toISOString()
-    };
-
-    setSavedFilters(prev => [...prev, filterConfig]);
-    setFilterName('');
-    alert('筛选条件已保存');
-  };
-
-  // 应用保存的筛选条件
-  const applySavedFilter = (filterConfig) => {
-    setSearchTerm(filterConfig.searchTerm);
-    setCategoryFilter(filterConfig.categoryFilter);
-    setSelectedMedicineTags(filterConfig.selectedMedicineTags);
-    setAdvancedFilters(filterConfig.advancedFilters);
-  };
-
-  // 删除保存的筛选条件
-  const deleteSavedFilter = (index) => {
-    setSavedFilters(prev => prev.filter((_, i) => i !== index));
-  };
 
   const handleDelete = (id) => {
     if (window.confirm('确定要删除这个物品吗？')) {
@@ -398,16 +365,7 @@ const Items = () => {
               {hasActiveFilters && <span style={{ background: 'var(--sage-green)', color: 'white', borderRadius: '50%', width: '16px', height: '16px', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>!</span>}
             </button>
             
-            {hasActiveFilters && (
-              <button
-                onClick={clearAllFilters}
-                className="btn btn-secondary"
-                style={{ fontSize: '12px', padding: '6px 12px' }}
-              >
-                <X size={14} style={{ marginRight: '4px' }} />
-                清除筛选
-              </button>
-            )}
+
           </div>
 
           {showAdvancedFilter && (
@@ -483,64 +441,7 @@ const Items = () => {
                 </div>
               </div>
 
-              {/* 保存筛选条件 */}
-              <div style={{ marginTop: '15px', padding: '15px', background: 'white', borderRadius: '6px', border: '1px solid #dee2e6' }}>
-                <h5 style={{ margin: '0 0 10px 0', color: '#333' }}>保存筛选条件</h5>
-                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <input
-                    type="text"
-                    value={filterName}
-                    onChange={(e) => setFilterName(e.target.value)}
-                    placeholder="输入筛选条件名称"
-                    style={{ flex: 1, padding: '8px 12px', border: '1px solid #ddd', borderRadius: '4px' }}
-                  />
-                  <button
-                    onClick={saveFilter}
-                    className="btn btn-secondary"
-                    style={{ padding: '8px 16px', fontSize: '12px' }}
-                  >
-                    <Save size={14} style={{ marginRight: '4px' }} />
-                    保存
-                  </button>
-                </div>
-              </div>
 
-              {/* 已保存的筛选条件 */}
-              {savedFilters.length > 0 && (
-                <div style={{ marginTop: '15px' }}>
-                  <h5 style={{ margin: '0 0 10px 0', color: '#333' }}>已保存的筛选条件</h5>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {savedFilters.map((filter, index) => (
-                      <div key={index} style={{ 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        gap: '8px',
-                        padding: '6px 12px',
-                        background: 'white',
-                        borderRadius: '20px',
-                        border: '1px solid #dee2e6',
-                        fontSize: '12px'
-                      }}>
-                        <span>{filter.name}</span>
-                        <button
-                          onClick={() => applySavedFilter(filter)}
-                          className="btn btn-secondary"
-                          style={{ padding: '2px 6px', fontSize: '10px' }}
-                        >
-                          应用
-                        </button>
-                        <button
-                          onClick={() => deleteSavedFilter(index)}
-                          className="btn btn-danger"
-                          style={{ padding: '2px 6px', fontSize: '10px' }}
-                        >
-                          <X size={10} />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -554,17 +455,10 @@ const Items = () => {
             borderRadius: '6px',
             border: '1px solid var(--sage-green)'
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <span style={{ fontSize: '14px', color: 'var(--sage-green)' }}>
                 找到 {filteredItems.length} 个物品
               </span>
-              <button
-                onClick={clearAllFilters}
-                className="btn btn-secondary"
-                style={{ padding: '4px 8px', fontSize: '12px' }}
-              >
-                清除筛选
-              </button>
             </div>
           </div>
         )}
