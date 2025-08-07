@@ -1,13 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Camera, X, RotateCcw, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Camera, X, RotateCcw } from 'lucide-react';
 import Quagga from 'quagga';
 
 const BarcodeScanner = ({ onScan, onClose }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState('');
-  const videoRef = useRef(null);
-  const streamRef = useRef(null);
 
   // 启动扫码器
   const startScanner = async () => {
@@ -142,7 +140,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const handleScanResult = (barcode) => {
     setResult(barcode);
     onScan(barcode);
-    stopCamera();
+    stopScanner();
   };
 
   // 重新开始扫描
@@ -158,9 +156,11 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   useEffect(() => {
     startScanner();
     return () => {
-      stopScanner();
+      if (isScanning) {
+        stopScanner();
+      }
     };
-  }, []);
+  }, [isScanning]);
 
   return (
     <div className="barcode-scanner">
