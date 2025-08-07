@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, PieChart, TrendingUp, Calendar, Package, Clock, AlertTriangle, Download } from 'lucide-react';
+import { BarChart3, PieChart, TrendingUp, Calendar, Package, Clock, AlertTriangle, Download, HelpCircle } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
-import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
+import { getExpiryStatus } from '../../utils/itemUtils';
+import { useNavigate } from 'react-router-dom';
 
 const Statistics = () => {
   const { items } = useLeanCloudItems();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [timeRange, setTimeRange] = useState('30');
   const [showExportModal, setShowExportModal] = useState(false);
+  const [showTimeRangeHelp, setShowTimeRangeHelp] = useState(false);
   const [exportOptions, setExportOptions] = useState({
     totalItems: true,
     expiredItems: true,
@@ -15,6 +18,11 @@ const Statistics = () => {
     categoryStats: true,
     brandStats: true
   });
+
+  // 卡片点击处理函数
+  const handleCardClick = (filterType) => {
+    navigate(`/items?filter=${filterType}`);
+  };
 
   // 基础统计数据
   const getBasicStats = () => {
@@ -178,10 +186,30 @@ const Statistics = () => {
       <div className="card">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
           <h2>数据统计</h2>
-          <button 
+                    <button
             onClick={() => setShowExportModal(true)}
-            className="btn btn-secondary"
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              padding: '10px 16px',
+              background: '#4A4A4A',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '14px',
+              fontWeight: '500',
+              transition: 'all 0.2s ease'
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = '#333333';
+              e.target.style.transform = 'translateY(-1px)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = '#4A4A4A';
+              e.target.style.transform = 'translateY(0)';
+            }}
           >
             <Download size={16} />
             导出数据
@@ -189,52 +217,158 @@ const Statistics = () => {
         </div>
         
         {/* 时间范围选择 */}
-        <div style={{ marginBottom: '20px' }}>
-          <label style={{ marginRight: '10px', fontWeight: '500' }}>统计时间范围：</label>
-          <select
-            value={timeRange}
-            onChange={(e) => setTimeRange(e.target.value)}
-            style={{ padding: '8px 12px', border: '1px solid #ddd', borderRadius: '4px' }}
-          >
-            <option value="7">最近7天</option>
-            <option value="30">最近30天</option>
-            <option value="90">最近90天</option>
-            <option value="365">最近一年</option>
-          </select>
+        <div style={{ marginBottom: '20px', position: 'relative' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <label style={{ fontWeight: '500', color: '#333' }}>统计时间范围：</label>
+            <select
+              value={timeRange}
+              onChange={(e) => setTimeRange(e.target.value)}
+              style={{ 
+                padding: '8px 12px', 
+                border: '1px solid #ddd', 
+                borderRadius: '6px',
+                background: 'white',
+                fontSize: '14px'
+              }}
+            >
+              <option value="7">最近7天</option>
+              <option value="30">最近30天</option>
+              <option value="90">最近90天</option>
+              <option value="365">最近一年</option>
+            </select>
+            <button
+              onClick={() => setShowTimeRangeHelp(!showTimeRangeHelp)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#666',
+                padding: '4px',
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = '#f0f0f0';
+                e.target.style.color = '#8A9A5B';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = 'none';
+                e.target.style.color = '#666';
+              }}
+            >
+              <HelpCircle size={16} />
+            </button>
+          </div>
+          {showTimeRangeHelp && (
+            <div style={{
+              position: 'absolute',
+              top: '100%',
+              left: '0',
+              background: 'white',
+              border: '1px solid #E0E0E0',
+              borderRadius: '8px',
+              padding: '12px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              fontSize: '14px',
+              color: '#666',
+              maxWidth: '300px',
+              zIndex: 1000,
+              marginTop: '8px'
+            }}>
+              <div style={{ fontWeight: '600', marginBottom: '6px', color: '#333' }}>时间范围说明</div>
+              <div>此时间范围仅影响"趋势分析"和"消耗模式"页面的数据。概览和分类统计页面显示所有时间的数据。</div>
+            </div>
+          )}
         </div>
 
-        {/* 标签页 - 增大文字按钮 */}
-        <div className="tabs">
+        {/* 标签页 - 下划线样式 */}
+        <div style={{ 
+          display: 'flex', 
+          borderBottom: '1px solid #E0E0E0', 
+          marginBottom: '24px',
+          gap: '32px'
+        }}>
           <button
-            className={`tab ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
-            style={{ fontSize: '16px', padding: '12px 20px' }}
+            style={{ 
+              fontSize: '16px', 
+              padding: '12px 0', 
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: activeTab === 'overview' ? '#8A9A5B' : '#666',
+              fontWeight: activeTab === 'overview' ? '600' : '400',
+              borderBottom: activeTab === 'overview' ? '3px solid #8A9A5B' : '3px solid transparent',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
           >
-            <BarChart3 size={18} style={{ marginRight: '8px' }} />
+            <BarChart3 size={18} />
             概览
           </button>
           <button
-            className={`tab ${activeTab === 'categories' ? 'active' : ''}`}
             onClick={() => setActiveTab('categories')}
-            style={{ fontSize: '16px', padding: '12px 20px' }}
+            style={{ 
+              fontSize: '16px', 
+              padding: '12px 0', 
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: activeTab === 'categories' ? '#8A9A5B' : '#666',
+              fontWeight: activeTab === 'categories' ? '600' : '400',
+              borderBottom: activeTab === 'categories' ? '3px solid #8A9A5B' : '3px solid transparent',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
           >
-            <PieChart size={18} style={{ marginRight: '8px' }} />
+            <PieChart size={18} />
             分类统计
           </button>
           <button
-            className={`tab ${activeTab === 'trends' ? 'active' : ''}`}
             onClick={() => setActiveTab('trends')}
-            style={{ fontSize: '16px', padding: '12px 20px' }}
+            style={{ 
+              fontSize: '16px', 
+              padding: '12px 0', 
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: activeTab === 'trends' ? '#8A9A5B' : '#666',
+              fontWeight: activeTab === 'trends' ? '600' : '400',
+              borderBottom: activeTab === 'trends' ? '3px solid #8A9A5B' : '3px solid transparent',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
           >
-            <TrendingUp size={18} style={{ marginRight: '8px' }} />
+            <TrendingUp size={18} />
             趋势分析
           </button>
           <button
-            className={`tab ${activeTab === 'consumption' ? 'active' : ''}`}
             onClick={() => setActiveTab('consumption')}
-            style={{ fontSize: '16px', padding: '12px 20px' }}
+            style={{ 
+              fontSize: '16px', 
+              padding: '12px 0', 
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: activeTab === 'consumption' ? '#8A9A5B' : '#666',
+              fontWeight: activeTab === 'consumption' ? '600' : '400',
+              borderBottom: activeTab === 'consumption' ? '3px solid #8A9A5B' : '3px solid transparent',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
           >
-            <Package size={18} style={{ marginRight: '8px' }} />
+            <Package size={18} />
             消耗模式
           </button>
         </div>
@@ -242,57 +376,159 @@ const Statistics = () => {
         {/* 概览页面 */}
         {activeTab === 'overview' && (
           <div>
-            {/* 基础统计卡片 - 使用绿色主题，减小尺寸 */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '30px' }}>
-              <div style={{ padding: '15px', background: 'var(--sage-green)', borderRadius: '8px', color: 'white' }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                  <Package size={20} style={{ marginRight: '8px' }} />
-                  <h3 style={{ margin: 0, fontSize: '1rem' }}>总物品数</h3>
+            {/* 基础统计卡片 - 使用新的配色方案，可点击 */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '30px' }}>
+              {/* 总物品数卡片 */}
+              <div 
+                style={{ 
+                  padding: '20px', 
+                  background: '#F5F5F5', 
+                  borderRadius: '12px', 
+                  color: '#4A4A4A',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  border: '1px solid #E0E0E0'
+                }}
+                onClick={() => handleCardClick('all')}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                  <Package size={28} style={{ marginRight: '12px' }} />
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>总物品数</h3>
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{basicStats.total}</div>
+                <div style={{ fontSize: '36px', fontWeight: '700', marginBottom: '8px' }}>{basicStats.total}</div>
+                <div style={{ fontSize: '14px', opacity: '0.7' }}>点击查看全部物品</div>
               </div>
               
-              <div style={{ padding: '15px', background: '#dc3545', borderRadius: '8px', color: 'white' }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                  <AlertTriangle size={20} style={{ marginRight: '8px' }} />
-                  <h3 style={{ margin: 0, fontSize: '1rem' }}>已过期</h3>
+              {/* 已过期卡片 */}
+              <div 
+                style={{ 
+                  padding: '20px', 
+                  background: '#CB4154', 
+                  borderRadius: '12px', 
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+                onClick={() => handleCardClick('expired')}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                  <AlertTriangle size={28} style={{ marginRight: '12px' }} />
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>已过期</h3>
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{basicStats.expired}</div>
+                <div style={{ fontSize: '36px', fontWeight: '700', marginBottom: '8px' }}>{basicStats.expired}</div>
+                <div style={{ fontSize: '14px', opacity: '0.9' }}>点击查看过期物品</div>
               </div>
               
-              <div style={{ padding: '15px', background: '#ffc107', borderRadius: '8px', color: 'white' }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                  <Clock size={20} style={{ marginRight: '8px' }} />
-                  <h3 style={{ margin: 0, fontSize: '1rem' }}>即将过期</h3>
+              {/* 即将过期卡片 */}
+              <div 
+                style={{ 
+                  padding: '20px', 
+                  background: '#E89F65', 
+                  borderRadius: '12px', 
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+                onClick={() => handleCardClick('expiring-soon')}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                  <Clock size={28} style={{ marginRight: '12px' }} />
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>即将过期</h3>
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{basicStats.expiringSoon}</div>
+                <div style={{ fontSize: '36px', fontWeight: '700', marginBottom: '8px' }}>{basicStats.expiringSoon}</div>
+                <div style={{ fontSize: '14px', opacity: '0.9' }}>点击查看即将过期物品</div>
               </div>
               
-              <div style={{ padding: '15px', background: '#28a745', borderRadius: '8px', color: 'white' }}>
-                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                  <Calendar size={20} style={{ marginRight: '8px' }} />
-                  <h3 style={{ margin: 0, fontSize: '1rem' }}>正常</h3>
+              {/* 正常卡片 */}
+              <div 
+                style={{ 
+                  padding: '20px', 
+                  background: '#8A9A5B', 
+                  borderRadius: '12px', 
+                  color: '#FFFFFF',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+                onClick={() => handleCardClick('normal')}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = 'translateY(-2px)';
+                  e.target.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = 'translateY(0)';
+                  e.target.style.boxShadow = '0 2px 8px rgba(0,0,0,0.1)';
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+                  <Calendar size={28} style={{ marginRight: '12px' }} />
+                  <h3 style={{ margin: 0, fontSize: '16px', fontWeight: '500' }}>正常</h3>
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{basicStats.normal}</div>
+                <div style={{ fontSize: '36px', fontWeight: '700', marginBottom: '8px' }}>{basicStats.normal}</div>
+                <div style={{ fontSize: '14px', opacity: '0.9' }}>点击查看正常物品</div>
               </div>
             </div>
 
-            {/* 过期状态饼图 */}
-            <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px', marginBottom: '20px' }}>
-              <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>过期状态分布</h3>
+            {/* 过期状态饼图 - 使用新的配色方案 */}
+            <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '12px', marginBottom: '20px' }}>
+              <h3 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '18px', fontWeight: '600' }}>过期状态分布</h3>
               <div style={{ display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: '20px' }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ 
-                    width: '80px', 
-                    height: '80px', 
+                    width: '100px', 
+                    height: '100px', 
                     borderRadius: '50%', 
-                    background: 'conic-gradient(#28a745 0deg, #28a745 126deg, #ffc107 126deg, #ffc107 252deg, #dc3545 252deg, #dc3545 360deg)',
-                    margin: '0 auto 10px'
+                    background: `conic-gradient(
+                      #8A9A5B 0deg, 
+                      #8A9A5B ${(basicStats.normal / basicStats.total) * 360}deg, 
+                      #E89F65 ${(basicStats.normal / basicStats.total) * 360}deg, 
+                      #E89F65 ${((basicStats.normal + basicStats.expiringSoon) / basicStats.total) * 360}deg, 
+                      #CB4154 ${((basicStats.normal + basicStats.expiringSoon) / basicStats.total) * 360}deg, 
+                      #CB4154 360deg
+                    )`,
+                    margin: '0 auto 15px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                   }}></div>
-                  <div style={{ fontSize: '14px', color: '#666' }}>
-                    <div>正常: {basicStats.normal} ({Math.round((basicStats.normal / basicStats.total) * 100)}%)</div>
-                    <div>即将过期: {basicStats.expiringSoon} ({Math.round((basicStats.expiringSoon / basicStats.total) * 100)}%)</div>
-                    <div>已过期: {basicStats.expired} ({Math.round((basicStats.expired / basicStats.total) * 100)}%)</div>
+                  <div style={{ fontSize: '14px', color: '#666', lineHeight: '1.6' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                      <div style={{ width: '12px', height: '12px', background: '#8A9A5B', borderRadius: '2px', marginRight: '8px' }}></div>
+                      正常: {basicStats.normal} ({Math.round((basicStats.normal / basicStats.total) * 100)}%)
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '8px' }}>
+                      <div style={{ width: '12px', height: '12px', background: '#E89F65', borderRadius: '2px', marginRight: '8px' }}></div>
+                      即将过期: {basicStats.expiringSoon} ({Math.round((basicStats.expiringSoon / basicStats.total) * 100)}%)
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div style={{ width: '12px', height: '12px', background: '#CB4154', borderRadius: '2px', marginRight: '8px' }}></div>
+                      已过期: {basicStats.expired} ({Math.round((basicStats.expired / basicStats.total) * 100)}%)
+                    </div>
                   </div>
                 </div>
               </div>

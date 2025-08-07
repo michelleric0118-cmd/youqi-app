@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Package, Plus, Eye } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
-import { getItemsFromLeanCloud, clearAllLeanCloudData } from '../../services/leancloudService';
 
 const Home = () => {
   const { items, getStats, addTestData, clearAllData, leanCloudConnected, syncStatus, syncToLeanCloud } = useLeanCloudItems();

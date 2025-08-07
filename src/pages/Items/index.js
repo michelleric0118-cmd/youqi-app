@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Trash2, Clock, AlertTriangle, Pill, Droplets, Utensils, Package2, Box, Filter, Edit } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
-import { getExpiryStatus, getExpiryText, CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
+import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
 import toast from 'react-hot-toast';
 import EmptyState from '../../components/EmptyState';
 import { useNavigate } from 'react-router-dom';

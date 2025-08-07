@@ -1,14 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Camera, X, RotateCcw } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Camera, X, RotateCcw, Keyboard } from 'lucide-react';
 import Quagga from 'quagga';
 
 const BarcodeScanner = ({ onScan, onClose }) => {
   const [isScanning, setIsScanning] = useState(false);
   const [error, setError] = useState('');
   const [result, setResult] = useState('');
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [manualBarcode, setManualBarcode] = useState('');
 
   // 启动扫码器
-  const startScanner = async () => {
+  const startScanner = useCallback(async () => {
     try {
       setError('');
       setIsScanning(true);
@@ -66,15 +68,15 @@ const BarcodeScanner = ({ onScan, onClose }) => {
       setError('无法启动扫码器，请检查权限设置');
       setIsScanning(false);
     }
-  };
+  }, []);
 
   // 停止扫码器
-  const stopScanner = () => {
+  const stopScanner = useCallback(() => {
     if (isScanning) {
       Quagga.stop();
     }
     setIsScanning(false);
-  };
+  }, [isScanning]);
 
   // 模拟扫码（用于测试）
   const simulateScan = () => {
@@ -153,6 +155,21 @@ const BarcodeScanner = ({ onScan, onClose }) => {
     setTimeout(startScanner, 500);
   };
 
+  // 手动输入条码
+  const handleManualInput = () => {
+    if (manualBarcode.trim()) {
+      handleScanResult(manualBarcode.trim());
+      setManualBarcode('');
+      setShowManualInput(false);
+    }
+  };
+
+  // 切换手动输入模式
+  const toggleManualInput = () => {
+    setShowManualInput(!showManualInput);
+    setManualBarcode('');
+  };
+
   useEffect(() => {
     startScanner();
     return () => {
@@ -160,7 +177,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         stopScanner();
       }
     };
-  }, [isScanning]);
+  }, [isScanning, startScanner, stopScanner]);
 
   return (
     <div className="barcode-scanner">
@@ -195,11 +212,67 @@ const BarcodeScanner = ({ onScan, onClose }) => {
                 <Camera size={16} style={{ marginRight: '8px' }} />
                 模拟扫码（测试）
               </button>
+              <button onClick={toggleManualInput} className="btn btn-secondary">
+                <Keyboard size={16} style={{ marginRight: '8px' }} />
+                {showManualInput ? '关闭手动输入' : '手动输入条码'}
+              </button>
               <button onClick={restartScan} className="btn btn-secondary">
                 <RotateCcw size={16} style={{ marginRight: '8px' }} />
                 重新扫描
               </button>
             </div>
+
+            {/* 手动输入条码 */}
+            {showManualInput && (
+              <div className="manual-input-container" style={{ 
+                marginTop: '20px', 
+                padding: '20px', 
+                background: '#f8f9fa', 
+                borderRadius: '8px',
+                border: '1px solid #dee2e6'
+              }}>
+                <h4 style={{ marginBottom: '15px', color: '#333' }}>手动输入条码</h4>
+                <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                  <input
+                    type="text"
+                    value={manualBarcode}
+                    onChange={(e) => setManualBarcode(e.target.value)}
+                    placeholder="请输入13位条码（如：6901234567890）"
+                    style={{
+                      flex: 1,
+                      padding: '12px',
+                      border: '2px solid #dee2e6',
+                      borderRadius: '8px',
+                      fontSize: '16px'
+                    }}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleManualInput();
+                      }
+                    }}
+                  />
+                  <button 
+                    onClick={handleManualInput}
+                    className="btn"
+                    style={{ 
+                      background: 'var(--sage-green)', 
+                      color: 'white',
+                      padding: '12px 20px'
+                    }}
+                  >
+                    确认
+                  </button>
+                </div>
+                <p style={{ 
+                  marginTop: '10px', 
+                  fontSize: '14px', 
+                  color: '#666',
+                  fontStyle: 'italic'
+                }}>
+                  提示：您可以输入任何13位数字进行测试，包括数据库中不存在的条码
+                </p>
+              </div>
+            )}
           </>
         )}
       </div>
