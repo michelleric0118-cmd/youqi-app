@@ -1037,3 +1037,42 @@ body[style*="font-size: 18px"] .navbar-subtitle {
     transform: rotate(360deg);
   }
 }
+
+/* Quagga.js 扫码器样式 */
+.viewport {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  overflow: hidden;
+}
+
+.viewport video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.viewport canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* 扫码器加载状态 */
+.scanner-loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.scanner-loading p {
+  color: #666;
+  font-size: 14px;
+}

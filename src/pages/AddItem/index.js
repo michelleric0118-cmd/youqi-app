@@ -4,6 +4,7 @@ import { Save, ArrowLeft, Camera } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
 import BarcodeScanner from '../../components/BarcodeScanner';
+import { generateProductInfo } from '../../services/productDatabase';
 import toast from 'react-hot-toast';
 
 const AddItem = () => {
@@ -67,29 +68,33 @@ const AddItem = () => {
     console.log('扫码结果:', barcode);
     
     try {
-      // 根据条码前缀判断商品类型并自动填充
-      if (barcode.startsWith('690')) {
-        // 中国商品条码，根据条码规则判断商品类型
-        const categoryMap = {
-          '690123': '药品',
-          '690987': '护肤品',
-          '690555': '食品'
-        };
-        
-        const prefix = barcode.substring(0, 6);
-        const category = categoryMap[prefix] || '其他';
-        
-        setFormData(prev => ({
-          ...prev,
-          name: `商品${barcode.substring(8)}`,
-          category,
-          brand: `品牌${barcode.substring(6, 8)}`
-        }));
-        
-        toast.success('扫码成功，已自动填充商品信息');
-      } else {
-        toast.success('扫码成功，请手动完善商品信息');
+      // 使用商品数据库服务生成商品信息
+      const productInfo = generateProductInfo(barcode);
+      
+      // 自动填充表单
+      setFormData(prev => ({
+        ...prev,
+        name: productInfo.name,
+        brand: productInfo.brand,
+        category: productInfo.category,
+        notes: productInfo.notes
+      }));
+      
+      // 如果是药品，设置药品标签
+      if (productInfo.category === '药品' && productInfo.medicineTags.length > 0) {
+        setSelectedMedicineTags(productInfo.medicineTags);
       }
+      
+      // 设置默认过期日期
+      const defaultExpiryDate = new Date();
+      defaultExpiryDate.setDate(defaultExpiryDate.getDate() + productInfo.defaultExpiryDays);
+      
+      setFormData(prev => ({
+        ...prev,
+        expiryDate: defaultExpiryDate.toISOString().split('T')[0]
+      }));
+      
+      toast.success('扫码成功，已自动填充商品信息');
     } catch (error) {
       console.error('处理扫码结果失败:', error);
       toast.error('扫码处理失败，请重试');

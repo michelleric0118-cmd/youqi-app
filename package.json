@@ -13,6 +13,7 @@
     "firebase": "^12.0.0",
     "leancloud-storage": "^4.15.2",
     "lucide-react": "^0.533.0",
+    "quagga": "^0.12.1",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-hot-toast": "^2.5.2",
