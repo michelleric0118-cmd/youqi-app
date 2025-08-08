@@ -1,0 +1,267 @@
+.batch-operations {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  z-index: 100;
+  border: 1px solid #f0f0f0;
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.batch-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.selected-count {
+  font-weight: 500;
+  color: var(--sage-green-dark);
+  font-size: 14px;
+}
+
+.clear-selection-btn {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.clear-selection-btn:hover {
+  background: #f0f0f0;
+  color: #333;
+}
+
+.batch-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.batch-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.batch-delete-btn {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.batch-delete-btn:hover {
+  background: #fecaca;
+  transform: translateY(-1px);
+}
+
+.batch-edit-btn {
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
+.batch-edit-btn:hover {
+  background: #bae6fd;
+  transform: translateY(-1px);
+}
+
+.batch-export-btn {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.batch-export-btn:hover {
+  background: #bbf7d0;
+  transform: translateY(-1px);
+}
+
+.batch-import-btn {
+  background: #fef7ff;
+  color: #9333ea;
+}
+
+.batch-import-btn:hover {
+  background: #e9d5ff;
+  transform: translateY(-1px);
+}
+
+/* 确认对话框 */
+.batch-confirm-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.batch-confirm-modal {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+.confirm-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.confirm-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #2c2c2c;
+}
+
+.confirm-content {
+  padding: 24px;
+}
+
+.confirm-content p {
+  margin: 0 0 16px 0;
+  color: #4a5568;
+  line-height: 1.6;
+}
+
+.delete-warning {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin-top: 16px;
+}
+
+.delete-warning p {
+  margin: 0;
+  color: #dc2626;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  padding: 20px 24px;
+  border-top: 1px solid #f0f0f0;
+  background: #fafafa;
+}
+
+.cancel-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: 1px solid #e0e0e0;
+  background: white;
+  color: #666;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cancel-btn:hover {
+  background: #f8f9fa;
+  border-color: #ccc;
+}
+
+.confirm-btn {
+  flex: 1;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: white;
+}
+
+.delete-confirm {
+  background: #dc2626;
+}
+
+.delete-confirm:hover {
+  background: #b91c1c;
+}
+
+.edit-confirm {
+  background: var(--sage-green);
+}
+
+.edit-confirm:hover {
+  background: var(--sage-green-dark);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .batch-operations {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+    flex-direction: column;
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .batch-info {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .batch-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .batch-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+
+  .batch-btn span {
+    display: none;
+  }
+} 

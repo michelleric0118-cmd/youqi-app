@@ -9,7 +9,19 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   const [showManualInput, setShowManualInput] = useState(false);
   const [manualBarcode, setManualBarcode] = useState('');
 
+  // 处理扫码结果
+  const handleScanResult = (barcode) => {
+    setResult(barcode);
+    onScan(barcode);
+    // 直接停止扫码器，避免循环依赖
+    if (isScanning) {
+      Quagga.stop();
+    }
+    setIsScanning(false);
+  };
+
   // 启动扫码器
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const startScanner = useCallback(async () => {
     try {
       setError('');
@@ -71,6 +83,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
   }, []);
 
   // 停止扫码器
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const stopScanner = useCallback(() => {
     if (isScanning) {
       Quagga.stop();
@@ -138,13 +151,6 @@ const BarcodeScanner = ({ onScan, onClose }) => {
     onScan(randomBarcode);
   };
 
-  // 处理扫码结果
-  const handleScanResult = (barcode) => {
-    setResult(barcode);
-    onScan(barcode);
-    stopScanner();
-  };
-
   // 重新开始扫描
   const restartScan = () => {
     setResult('');
@@ -177,6 +183,7 @@ const BarcodeScanner = ({ onScan, onClose }) => {
         stopScanner();
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isScanning, startScanner, stopScanner]);
 
   return (

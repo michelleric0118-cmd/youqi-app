@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Search, Trash2, Clock, AlertTriangle, Pill, Droplets, Utensils, Package2, Box, Filter, Edit } from 'lucide-react';
+import { Search, Trash2, Pill, Droplets, Utensils, Package2, Box, Filter, Edit } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
 import toast from 'react-hot-toast';
@@ -141,25 +141,7 @@ const Items = () => {
     advancedFilters.expiryStatus || advancedFilters.brand || advancedFilters.quantityRange ||
     advancedFilters.dateRange.start || advancedFilters.dateRange.end;
 
-  const handleCategoryFilterChange = (e) => {
-    const category = e.target.value;
-    setCategoryFilter(category);
-    
-    // 如果切换分类，清空药品标签筛选
-    if (category !== '药品') {
-      setSelectedMedicineTags([]);
-    }
-  };
-
-  const handleMedicineTagFilterChange = (tag) => {
-    setSelectedMedicineTags(prev => {
-      if (prev.includes(tag)) {
-        return prev.filter(t => t !== tag);
-      } else {
-        return [...prev, tag];
-      }
-    });
-  };
+  // 分类筛选和药品标签筛选功能已集成到高级筛选中
 
   // 高级筛选处理
   const handleAdvancedFilterChange = (field, value) => {

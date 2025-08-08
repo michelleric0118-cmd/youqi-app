@@ -5,7 +5,7 @@ import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
 
 const Home = () => {
-  const { items, getStats, addTestData, clearAllData, leanCloudConnected, syncStatus, syncToLeanCloud } = useLeanCloudItems();
+  const { items, getStats } = useLeanCloudItems();
   const stats = getStats();
   const [isElderMode, setIsElderMode] = useState(false);
 
@@ -35,65 +35,7 @@ const Home = () => {
     }
   };
 
-  // 导出数据功能
-  const exportData = (type = 'all') => {
-    let dataToExport = [];
-    
-    switch (type) {
-      case 'expired':
-        dataToExport = items.filter(item => getExpiryStatus(item.expiryDate) === 'expired');
-        break;
-      case 'expiring-soon':
-        dataToExport = items.filter(item => getExpiryStatus(item.expiryDate) === 'expiring-soon');
-        break;
-      case 'all':
-      default:
-        dataToExport = items;
-        break;
-    }
-
-    if (dataToExport.length === 0) {
-      alert('没有数据可以导出');
-      return;
-    }
-
-    // 格式化数据
-    const formattedData = dataToExport.map(item => ({
-      名称: item.name,
-      分类: item.category,
-      品牌: item.brand || '',
-      数量: item.quantity,
-      过期日期: item.expiryDate,
-      过期状态: getExpiryText(item.expiryDate).text,
-      备注: item.notes || '',
-      药品标签: item.medicineTags ? item.medicineTags.join(', ') : '',
-      创建时间: item.createdAt
-    }));
-
-    // 创建CSV内容
-    const headers = Object.keys(formattedData[0]);
-    const csvContent = [
-      headers.join(','),
-      ...formattedData.map(row => 
-        headers.map(header => {
-          const value = row[header] || '';
-          // 处理包含逗号的内容
-          return `"${value.toString().replace(/"/g, '""')}"`;
-        }).join(',')
-      )
-    ].join('\n');
-
-    // 创建下载链接
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `有期物品清单_${type === 'all' ? '全部' : type === 'expired' ? '已过期' : '即将过期'}_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  // 导出数据功能已移至DataImport组件
 
   return (
     <div>

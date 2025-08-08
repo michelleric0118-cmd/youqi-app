@@ -1,8 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BarChart3, PieChart, TrendingUp, Calendar, Package, Clock, AlertTriangle, Download, HelpCircle } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus } from '../../utils/itemUtils';
 import { useNavigate } from 'react-router-dom';
+import ExpiryTrendChart from '../../components/charts/ExpiryTrendChart';
+import CategoryPieChart from '../../components/charts/CategoryPieChart';
+import ConsumptionBarChart from '../../components/charts/ConsumptionBarChart';
+import BrandBarChart from '../../components/charts/BrandBarChart';
 
 const Statistics = () => {
   const { items } = useLeanCloudItems();
@@ -371,6 +375,26 @@ const Statistics = () => {
             <Package size={18} />
             消耗模式
           </button>
+          <button
+            onClick={() => setActiveTab('advanced')}
+            style={{ 
+              fontSize: '16px', 
+              padding: '12px 0', 
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: activeTab === 'advanced' ? '#8A9A5B' : '#666',
+              fontWeight: activeTab === 'advanced' ? '600' : '400',
+              borderBottom: activeTab === 'advanced' ? '3px solid #8A9A5B' : '3px solid transparent',
+              transition: 'all 0.2s ease',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}
+          >
+            <BarChart3 size={18} />
+            高级分析
+          </button>
         </div>
 
         {/* 概览页面 */}
@@ -539,57 +563,64 @@ const Statistics = () => {
         {/* 分类统计页面 */}
         {activeTab === 'categories' && (
           <div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
-              {categoryStats.map((category, index) => (
-                <div key={category.name} style={{ 
-                  padding: '15px', 
-                  background: 'white', 
-                  borderRadius: '8px', 
-                  border: '1px solid #e9ecef',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-                }}>
-                  <h3 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '1rem' }}>{category.name}</h3>
-                  <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--sage-green)', marginBottom: '8px' }}>
-                    {category.count}
-                  </div>
-                  <div style={{ 
-                    width: '100%', 
-                    height: '6px', 
-                    background: '#f0f0f0', 
-                    borderRadius: '3px',
-                    overflow: 'hidden'
-                  }}>
-                    <div style={{ 
-                      width: `${category.percentage}%`, 
-                      height: '100%', 
-                      background: 'var(--sage-green)',
-                      borderRadius: '3px'
-                    }}></div>
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>
-                    {category.percentage}% 的总物品
-                  </div>
-                </div>
-              ))}
+            {/* 分类饼图 */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '18px', fontWeight: '600' }}>
+                分类分布饼图
+              </h3>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <CategoryPieChart data={categoryStats} />
+              </div>
             </div>
 
-            {/* 品牌统计 */}
-            {brandStats.length > 0 && (
-              <div style={{ marginTop: '30px' }}>
-                <h3 style={{ margin: '0 0 15px 0', color: '#333' }}>品牌分布（前10名）</h3>
-                <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
-                  {brandStats.map((brand, index) => (
-                    <div key={brand.name} style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center',
-                      padding: '10px 0',
-                      borderBottom: index < brandStats.length - 1 ? '1px solid #e9ecef' : 'none'
-                    }}>
-                      <span style={{ fontWeight: '500' }}>{brand.name}</span>
-                      <span style={{ color: 'var(--sage-green)', fontWeight: 'bold' }}>{brand.count} 个物品</span>
+            {/* 分类卡片 */}
+            <div style={{ marginBottom: '30px' }}>
+              <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '18px', fontWeight: '600' }}>
+                分类详细统计
+              </h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+                {categoryStats.map((category, index) => (
+                  <div key={category.name} style={{ 
+                    padding: '15px', 
+                    background: 'white', 
+                    borderRadius: '8px', 
+                    border: '1px solid #e9ecef',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}>
+                    <h3 style={{ margin: '0 0 10px 0', color: '#333', fontSize: '1rem' }}>{category.name}</h3>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--sage-green)', marginBottom: '8px' }}>
+                      {category.count}
                     </div>
-                  ))}
+                    <div style={{ 
+                      width: '100%', 
+                      height: '6px', 
+                      background: '#f0f0f0', 
+                      borderRadius: '3px',
+                      overflow: 'hidden'
+                    }}>
+                      <div style={{ 
+                        width: `${category.percentage}%`, 
+                        height: '100%', 
+                        background: 'var(--sage-green)',
+                        borderRadius: '3px'
+                      }}></div>
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#666', marginTop: '6px' }}>
+                      {category.percentage}% 的总物品
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* 品牌统计图表 */}
+            {brandStats.length > 0 && (
+              <div>
+                <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '18px', fontWeight: '600' }}>
+                  品牌分布柱状图（前10名）
+                </h3>
+                <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  <BrandBarChart data={brandStats} />
                 </div>
               </div>
             )}
@@ -599,28 +630,44 @@ const Statistics = () => {
         {/* 趋势分析页面 */}
         {activeTab === 'trends' && (
           <div>
-            <h3 style={{ margin: '0 0 20px 0', color: '#333' }}>过期趋势分析（最近12个月）</h3>
-            <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
-                <span style={{ fontSize: '14px', color: '#666' }}>月份</span>
-                <span style={{ fontSize: '14px', color: '#666' }}>已过期</span>
-                <span style={{ fontSize: '14px', color: '#666' }}>即将过期</span>
-                <span style={{ fontSize: '14px', color: '#666' }}>总计</span>
+            <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '18px', fontWeight: '600' }}>
+              过期趋势分析（最近12个月）
+            </h3>
+            
+            {/* 趋势图表 */}
+            <div style={{ marginBottom: '30px' }}>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <ExpiryTrendChart data={expiryTrend} />
               </div>
-              {expiryTrend.map((trend, index) => (
-                <div key={index} style={{ 
-                  display: 'flex', 
-                  justifyContent: 'space-between', 
-                  alignItems: 'center',
-                  padding: '8px 0',
-                  borderBottom: index < expiryTrend.length - 1 ? '1px solid #e9ecef' : 'none'
-                }}>
-                  <span style={{ fontWeight: '500', minWidth: '60px' }}>{trend.month}</span>
-                  <span style={{ color: '#dc3545', fontWeight: 'bold' }}>{trend.expired}</span>
-                  <span style={{ color: '#ffc107', fontWeight: 'bold' }}>{trend.expiring}</span>
-                  <span style={{ color: 'var(--sage-green)', fontWeight: 'bold' }}>{trend.total}</span>
+            </div>
+
+            {/* 趋势数据表格 */}
+            <div>
+              <h4 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '16px', fontWeight: '600' }}>
+                详细数据
+              </h4>
+              <div style={{ background: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+                  <span style={{ fontSize: '14px', color: '#666', fontWeight: '500' }}>月份</span>
+                  <span style={{ fontSize: '14px', color: '#666', fontWeight: '500' }}>已过期</span>
+                  <span style={{ fontSize: '14px', color: '#666', fontWeight: '500' }}>即将过期</span>
+                  <span style={{ fontSize: '14px', color: '#666', fontWeight: '500' }}>总计</span>
                 </div>
-              ))}
+                {expiryTrend.map((trend, index) => (
+                  <div key={index} style={{ 
+                    display: 'flex', 
+                    justifyContent: 'space-between', 
+                    alignItems: 'center',
+                    padding: '8px 0',
+                    borderBottom: index < expiryTrend.length - 1 ? '1px solid #e9ecef' : 'none'
+                  }}>
+                    <span style={{ fontWeight: '500', minWidth: '60px' }}>{trend.month}</span>
+                    <span style={{ color: '#dc3545', fontWeight: 'bold' }}>{trend.expired}</span>
+                    <span style={{ color: '#ffc107', fontWeight: 'bold' }}>{trend.expiring}</span>
+                    <span style={{ color: 'var(--sage-green)', fontWeight: 'bold' }}>{trend.total}</span>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -628,74 +675,334 @@ const Statistics = () => {
         {/* 消耗模式页面 */}
         {activeTab === 'consumption' && (
           <div>
-            <h3 style={{ margin: '0 0 20px 0', color: '#333' }}>消耗模式分析</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
-              {Object.entries(consumptionPattern).map(([category, pattern]) => (
-                <div key={category} style={{ 
-                  padding: '15px', 
-                  background: 'white', 
+            <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '18px', fontWeight: '600' }}>
+              消耗模式分析
+            </h3>
+            
+            {/* 消耗模式柱状图 */}
+            <div style={{ marginBottom: '30px' }}>
+              <div style={{ background: 'white', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                <ConsumptionBarChart data={Object.entries(consumptionPattern).map(([category, pattern]) => ({
+                  category,
+                  high: pattern.high,
+                  medium: pattern.medium,
+                  low: pattern.low
+                }))} />
+              </div>
+            </div>
+
+            {/* 消耗模式详细卡片 */}
+            <div>
+              <h4 style={{ margin: '0 0 15px 0', color: '#333', fontSize: '16px', fontWeight: '600' }}>
+                详细分析
+              </h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '15px' }}>
+                {Object.entries(consumptionPattern).map(([category, pattern]) => (
+                  <div key={category} style={{ 
+                    padding: '15px', 
+                    background: 'white', 
+                    borderRadius: '8px', 
+                    border: '1px solid #e9ecef',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  }}>
+                    <h4 style={{ margin: '0 0 12px 0', color: '#333', fontSize: '1rem' }}>{category}</h4>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', color: '#666' }}>高消耗 (≥10个)</span>
+                      <span style={{ color: '#dc3545', fontWeight: 'bold' }}>{pattern.high}</span>
+                    </div>
+                    <div style={{ 
+                      width: '100%', 
+                      height: '4px', 
+                      background: '#f0f0f0', 
+                      borderRadius: '2px',
+                      marginBottom: '10px'
+                    }}>
+                      <div style={{ 
+                        width: `${pattern.high > 0 ? (pattern.high / (pattern.high + pattern.medium + pattern.low)) * 100 : 0}%`, 
+                        height: '100%', 
+                        background: '#dc3545',
+                        borderRadius: '2px'
+                      }}></div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', color: '#666' }}>中等消耗 (5-9个)</span>
+                      <span style={{ color: '#ffc107', fontWeight: 'bold' }}>{pattern.medium}</span>
+                    </div>
+                    <div style={{ 
+                      width: '100%', 
+                      height: '4px', 
+                      background: '#f0f0f0', 
+                      borderRadius: '2px',
+                      marginBottom: '10px'
+                    }}>
+                      <div style={{ 
+                        width: `${pattern.medium > 0 ? (pattern.medium / (pattern.high + pattern.medium + pattern.low)) * 100 : 0}%`, 
+                        height: '100%', 
+                        background: '#ffc107',
+                        borderRadius: '2px'
+                      }}></div>
+                    </div>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
+                      <span style={{ fontSize: '12px', color: '#666' }}>低消耗 (1-4个)</span>
+                      <span style={{ color: '#28a745', fontWeight: 'bold' }}>{pattern.low}</span>
+                    </div>
+                    <div style={{ 
+                      width: '100%', 
+                      height: '4px', 
+                      background: '#f0f0f0', 
+                      borderRadius: '2px'
+                    }}>
+                      <div style={{ 
+                        width: `${pattern.low > 0 ? (pattern.low / (pattern.high + pattern.medium + pattern.low)) * 100 : 0}%`, 
+                        height: '100%', 
+                        background: '#28a745',
+                        borderRadius: '2px'
+                      }}></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 高级分析页面 */}
+        {activeTab === 'advanced' && (
+          <div>
+            <h3 style={{ margin: '0 0 20px 0', color: '#333', fontSize: '18px', fontWeight: '600' }}>
+              高级统计分析
+            </h3>
+            
+            {/* 时间范围筛选 */}
+            <div style={{ marginBottom: '30px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
+                <Calendar size={20} color="#666" />
+                <label style={{ fontWeight: '500', color: '#333' }}>分析时间范围：</label>
+                <select
+                  value={timeRange}
+                  onChange={(e) => setTimeRange(e.target.value)}
+                  style={{ 
+                    padding: '8px 12px', 
+                    border: '1px solid #ddd', 
+                    borderRadius: '6px',
+                    background: 'white',
+                    fontSize: '14px'
+                  }}
+                >
+                  <option value="7">最近7天</option>
+                  <option value="30">最近30天</option>
+                  <option value="90">最近90天</option>
+                  <option value="365">最近一年</option>
+                  <option value="all">全部时间</option>
+                </select>
+              </div>
+            </div>
+
+            {/* 过期预警统计 */}
+            <div style={{ marginBottom: '30px' }}>
+              <h4 style={{ 
+                margin: '0 0 16px 0', 
+                color: '#333', 
+                fontSize: '16px', 
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <AlertTriangle size={18} color="#CB4154" />
+                过期预警统计
+              </h4>
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
+                gap: '12px' 
+              }}>
+                <div style={{ 
+                  padding: '16px', 
+                  background: '#CB4154', 
                   borderRadius: '8px', 
-                  border: '1px solid #e9ecef',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                  color: 'white',
+                  textAlign: 'center'
                 }}>
-                  <h4 style={{ margin: '0 0 12px 0', color: '#333', fontSize: '1rem' }}>{category}</h4>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', color: '#666' }}>高消耗 (≥10个)</span>
-                    <span style={{ color: '#dc3545', fontWeight: 'bold' }}>{pattern.high}</span>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                    {items.filter(item => getExpiryStatus(item.expiryDate) === 'expired').length}
                   </div>
+                  <div style={{ fontSize: '12px' }}>已过期</div>
+                </div>
+                <div style={{ 
+                  padding: '16px', 
+                  background: '#E89F65', 
+                  borderRadius: '8px', 
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                    {items.filter(item => {
+                      const expiryDate = new Date(item.expiryDate);
+                      const today = new Date();
+                      return expiryDate.toDateString() === today.toDateString();
+                    }).length}
+                  </div>
+                  <div style={{ fontSize: '12px' }}>今日过期</div>
+                </div>
+                <div style={{ 
+                  padding: '16px', 
+                  background: '#FFD700', 
+                  borderRadius: '8px', 
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                    {items.filter(item => {
+                      const expiryDate = new Date(item.expiryDate);
+                      const today = new Date();
+                      const weekLater = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+                      return expiryDate > today && expiryDate <= weekLater;
+                    }).length}
+                  </div>
+                  <div style={{ fontSize: '12px' }}>本周过期</div>
+                </div>
+                <div style={{ 
+                  padding: '16px', 
+                  background: '#8A9A5B', 
+                  borderRadius: '8px', 
+                  color: 'white',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
+                    {items.filter(item => {
+                      const expiryDate = new Date(item.expiryDate);
+                      const today = new Date();
+                      const monthLater = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000);
+                      return expiryDate > today && expiryDate <= monthLater;
+                    }).length}
+                  </div>
+                  <div style={{ fontSize: '12px' }}>本月过期</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 品牌使用频率 */}
+            {brandStats.length > 0 && (
+              <div style={{ marginBottom: '30px' }}>
+                <h4 style={{ 
+                  margin: '0 0 16px 0', 
+                  color: '#333', 
+                  fontSize: '16px', 
+                  fontWeight: '600',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}>
+                  <Package size={18} color="#8A9A5B" />
+                  品牌使用频率 (前10名)
+                </h4>
+                <div style={{ 
+                  background: '#f8f9fa', 
+                  padding: '20px', 
+                  borderRadius: '12px',
+                  maxHeight: '400px',
+                  overflow: 'auto'
+                }}>
+                  {brandStats.map((brand, index) => (
+                    <div key={brand.name} style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      padding: '12px 0',
+                      borderBottom: index < brandStats.length - 1 ? '1px solid #e9ecef' : 'none'
+                    }}>
+                      <div>
+                        <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
+                          {brand.name}
+                        </div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>
+                          使用频率: {Math.round((brand.count / items.length) * 100)}%
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#8A9A5B' }}>
+                          {brand.count} 个
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* 数据洞察 */}
+            <div>
+              <h4 style={{ 
+                margin: '0 0 16px 0', 
+                color: '#333', 
+                fontSize: '16px', 
+                fontWeight: '600',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px'
+              }}>
+                <TrendingUp size={18} color="#4A90E2" />
+                数据洞察
+              </h4>
+              <div style={{ 
+                background: '#f8f9fa', 
+                padding: '20px', 
+                borderRadius: '12px'
+              }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '16px' }}>
                   <div style={{ 
-                    width: '100%', 
-                    height: '4px', 
-                    background: '#f0f0f0', 
-                    borderRadius: '2px',
-                    marginBottom: '10px'
+                    padding: '16px', 
+                    background: 'white', 
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                   }}>
-                    <div style={{ 
-                      width: `${pattern.high > 0 ? (pattern.high / (pattern.high + pattern.medium + pattern.low)) * 100 : 0}%`, 
-                      height: '100%', 
-                      background: '#dc3545',
-                      borderRadius: '2px'
-                    }}></div>
+                    <h5 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '14px', fontWeight: '600' }}>
+                      平均过期时间
+                    </h5>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#8A9A5B' }}>
+                      {Math.round(items.reduce((acc, item) => {
+                        const expiryDate = new Date(item.expiryDate);
+                        const today = new Date();
+                        return acc + Math.max(0, (expiryDate - today) / (1000 * 60 * 60 * 24));
+                      }, 0) / Math.max(1, items.length))} 天
+                    </div>
                   </div>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', color: '#666' }}>中等消耗 (5-9个)</span>
-                    <span style={{ color: '#ffc107', fontWeight: 'bold' }}>{pattern.medium}</span>
-                  </div>
                   <div style={{ 
-                    width: '100%', 
-                    height: '4px', 
-                    background: '#f0f0f0', 
-                    borderRadius: '2px',
-                    marginBottom: '10px'
+                    padding: '16px', 
+                    background: 'white', 
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                   }}>
-                    <div style={{ 
-                      width: `${pattern.medium > 0 ? (pattern.medium / (pattern.high + pattern.medium + pattern.low)) * 100 : 0}%`, 
-                      height: '100%', 
-                      background: '#ffc107',
-                      borderRadius: '2px'
-                    }}></div>
+                    <h5 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '14px', fontWeight: '600' }}>
+                      过期风险指数
+                    </h5>
+                    <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#CB4154' }}>
+                      {Math.round((items.filter(item => getExpiryStatus(item.expiryDate) === 'expired').length / Math.max(1, items.length)) * 100)}%
+                    </div>
                   </div>
                   
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', color: '#666' }}>低消耗 (1-4个)</span>
-                    <span style={{ color: '#28a745', fontWeight: 'bold' }}>{pattern.low}</span>
-                  </div>
                   <div style={{ 
-                    width: '100%', 
-                    height: '4px', 
-                    background: '#f0f0f0', 
-                    borderRadius: '2px'
+                    padding: '16px', 
+                    background: 'white', 
+                    borderRadius: '8px',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                   }}>
-                    <div style={{ 
-                      width: `${pattern.low > 0 ? (pattern.low / (pattern.high + pattern.medium + pattern.low)) * 100 : 0}%`, 
-                      height: '100%', 
-                      background: '#28a745',
-                      borderRadius: '2px'
-                    }}></div>
+                    <h5 style={{ margin: '0 0 8px 0', color: '#333', fontSize: '14px', fontWeight: '600' }}>
+                      最受欢迎分类
+                    </h5>
+                    <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#8A9A5B' }}>
+                      {categoryStats.length > 0 ? categoryStats[0].name : '无数据'}
+                    </div>
+                    <div style={{ fontSize: '12px', color: '#666' }}>
+                      {categoryStats.length > 0 ? `${categoryStats[0].count} 个物品` : ''}
+                    </div>
                   </div>
                 </div>
-              ))}
+              </div>
             </div>
           </div>
         )}

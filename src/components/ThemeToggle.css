@@ -1,0 +1,147 @@
+.theme-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.theme-toggle-container {
+  display: flex;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 4px;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+}
+
+.theme-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  background: none;
+  color: var(--color-textSecondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.theme-btn:hover {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.theme-btn.active {
+  background-color: var(--color-primary);
+  color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.theme-btn:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.theme-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+}
+
+.theme-label {
+  font-size: 14px;
+  color: var(--color-textSecondary);
+  font-weight: 500;
+}
+
+.theme-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--color-text);
+  font-weight: 600;
+}
+
+/* 深色模式特定样式 */
+.theme-dark .theme-toggle {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.theme-dark .theme-toggle-container {
+  background-color: var(--color-background);
+  border-color: var(--color-border);
+}
+
+.theme-dark .theme-btn {
+  color: var(--color-textSecondary);
+}
+
+.theme-dark .theme-btn:hover {
+  background-color: var(--color-surface);
+  color: var(--color-text);
+}
+
+.theme-dark .theme-btn.active {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.theme-dark .theme-indicator {
+  background-color: var(--color-background);
+  border-color: var(--color-border);
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+  .theme-toggle {
+    padding: 12px;
+  }
+
+  .theme-toggle-container {
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .theme-btn {
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  .theme-indicator {
+    flex-direction: column;
+    gap: 4px;
+    text-align: center;
+  }
+}
+
+/* 无障碍支持 */
+@media (prefers-reduced-motion: reduce) {
+  .theme-btn {
+    transition: none;
+  }
+}
+
+/* 高对比度模式 */
+@media (prefers-contrast: high) {
+  .theme-btn {
+    border: 2px solid var(--color-border);
+  }
+  
+  .theme-btn.active {
+    border-color: var(--color-primary);
+  }
+} 

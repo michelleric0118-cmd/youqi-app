@@ -1076,3 +1076,55 @@ body[style*="font-size: 18px"] .navbar-subtitle {
   color: #666;
   font-size: 14px;
 }
+
+/* 设置按钮样式 */
+.navbar-settings-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  color: #666;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.navbar-settings-btn:hover {
+  background: rgba(138, 154, 91, 0.1);
+  color: var(--sage-green-dark);
+}
+
+.navbar-settings-btn:active {
+  transform: scale(0.95);
+}
+
+.navbar-settings-btn span {
+  font-size: 14px;
+  font-weight: 500;
+  margin-left: 8px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .navbar-settings-btn {
+    padding: 8px 12px;
+  }
+  
+  .navbar-settings-btn span {
+    font-size: 12px;
+  }
+}
+
+/* 老年人模式 */
+body[style*="font-size: 18px"] .navbar-settings-btn {
+  font-size: 18px !important;
+  padding: 12px 16px !important;
+}
+
+body[style*="font-size: 18px"] .navbar-settings-btn span {
+  font-size: 18px !important;
+}
