@@ -1,0 +1,237 @@
+.advanced-stats {
+  padding: 20px;
+  background-color: var(--color-background);
+  min-height: 100vh;
+}
+
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding: 16px;
+  background-color: var(--color-surface);
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+}
+
+.stats-header h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.stats-controls {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.time-range-select,
+.category-select {
+  padding: 8px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  background-color: var(--color-background);
+  color: var(--color-text);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background-color: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.export-btn:hover {
+  background-color: var(--color-info);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.stats-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card h3 {
+  margin: 0 0 16px 0;
+  color: var(--color-text);
+  font-size: 18px;
+  font-weight: 600;
+  border-bottom: 2px solid var(--color-primary);
+  padding-bottom: 8px;
+}
+
+.stats-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metric {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: var(--color-background);
+  border-radius: 6px;
+  border-left: 3px solid var(--color-primary);
+}
+
+.metric span {
+  color: var(--color-text);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.brand-list,
+.location-list,
+.consumption-list,
+.frequency-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.brand-item,
+.location-item,
+.consumption-item,
+.frequency-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background-color: var(--color-background);
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+.brand-name,
+.category-name {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.brand-count,
+.brand-value,
+.location-count,
+.consumption-details,
+.frequency-count {
+  color: var(--color-textSecondary);
+  font-size: 12px;
+}
+
+.consumption-details {
+  display: flex;
+  gap: 8px;
+}
+
+.risk-high {
+  border-left-color: var(--color-error);
+}
+
+.risk-medium {
+  border-left-color: var(--color-warning);
+}
+
+.risk-low {
+  border-left-color: var(--color-success);
+}
+
+.risk-none {
+  border-left-color: var(--color-info);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .stats-header {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+
+  .stats-controls {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .stats-card {
+    padding: 16px;
+  }
+
+  .metric {
+    padding: 6px 8px;
+  }
+
+  .brand-item,
+  .location-item,
+  .consumption-item,
+  .frequency-item {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+/* 深色模式适配 */
+.theme-dark .stats-card {
+  background-color: var(--color-surface);
+  border-color: var(--color-border);
+}
+
+.theme-dark .metric,
+.theme-dark .brand-item,
+.theme-dark .location-item,
+.theme-dark .consumption-item,
+.theme-dark .frequency-item {
+  background-color: var(--color-background);
+  border-color: var(--color-border);
+}
+
+/* 动画效果 */
+.stats-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stats-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.metric {
+  transition: background-color 0.2s ease;
+}
+
+.metric:hover {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.metric:hover span {
+  color: white;
+} 

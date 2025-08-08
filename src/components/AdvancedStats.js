@@ -1,232 +1,233 @@
 import React, { useState, useMemo } from 'react';
-import { Calendar, TrendingUp, AlertTriangle, Package, Clock, BarChart3 } from 'lucide-react';
+import { 
+  BarChart3, 
+  PieChart, 
+  TrendingUp, 
+  Calendar, 
+  Package, 
+  Clock, 
+  AlertTriangle, 
+  Download, 
+  HelpCircle,
+  DollarSign,
+  Target,
+  Activity,
+  Users,
+  MapPin,
+  ShoppingCart,
+  Star,
+  Zap,
+  Shield
+} from 'lucide-react';
 import { getExpiryStatus } from '../utils/itemUtils';
+import dataExportManager from '../utils/dataExport';
+import './AdvancedStats.css';
 
-const AdvancedStats = ({ items, timeRange }) => {
-  const [selectedTimeRange, setSelectedTimeRange] = useState(timeRange || '30');
+const AdvancedStats = ({ items = [] }) => {
+  const [selectedTimeRange, setSelectedTimeRange] = useState('30');
+  const [selectedCategory, setSelectedCategory] = useState('all');
 
-  // 根据时间范围筛选数据
+  // 时间范围选项
+  const timeRanges = [
+    { value: '7', label: '最近7天' },
+    { value: '30', label: '最近30天' },
+    { value: '90', label: '最近90天' },
+    { value: '365', label: '最近一年' },
+    { value: 'all', label: '全部时间' }
+  ];
+
+  // 过滤数据
   const filteredItems = useMemo(() => {
-    if (!selectedTimeRange || selectedTimeRange === 'all') return items;
-    
-    const now = new Date();
-    const daysAgo = parseInt(selectedTimeRange);
-    const cutoffDate = new Date(now.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-    
-    return items.filter(item => {
-      const itemDate = new Date(item.createdAt);
-      return itemDate >= cutoffDate;
-    });
-  }, [items, selectedTimeRange]);
+    let filtered = items;
 
-  // 品牌使用频率分析
-  const getBrandFrequency = () => {
-    const brandStats = {};
+    // 按时间范围过滤
+    if (selectedTimeRange !== 'all') {
+      const daysAgo = new Date();
+      daysAgo.setDate(daysAgo.getDate() - parseInt(selectedTimeRange));
+      filtered = filtered.filter(item => new Date(item.createdAt) >= daysAgo);
+    }
+
+    // 按分类过滤
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(item => item.category === selectedCategory);
+    }
+
+    return filtered;
+  }, [items, selectedTimeRange, selectedCategory]);
+
+  // 基础统计指标
+  const basicStats = useMemo(() => {
+    const total = filteredItems.length;
+    const expired = filteredItems.filter(item => getExpiryStatus(item.expiryDate) === 'expired').length;
+    const expiringSoon = filteredItems.filter(item => getExpiryStatus(item.expiryDate) === 'expiring-soon').length;
+    const normal = filteredItems.filter(item => getExpiryStatus(item.expiryDate) === 'normal').length;
+    const expiringRate = total > 0 ? ((expired + expiringSoon) / total * 100).toFixed(1) : 0;
+
+    return { total, expired, expiringSoon, normal, expiringRate };
+  }, [filteredItems]);
+
+  // 价值分析
+  const valueStats = useMemo(() => {
+    const totalValue = filteredItems.reduce((sum, item) => {
+      const price = parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      return sum + (price * quantity);
+    }, 0);
+
+    const avgValue = filteredItems.length > 0 ? totalValue / filteredItems.length : 0;
+    const highValueItems = filteredItems.filter(item => {
+      const price = parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      return (price * quantity) > 100;
+    }).length;
+
+    return { totalValue, avgValue, highValueItems };
+  }, [filteredItems]);
+
+  // 品牌分析
+  const brandStats = useMemo(() => {
+    const brands = {};
+    
     filteredItems.forEach(item => {
-      if (item.brand) {
-        if (!brandStats[item.brand]) {
-          brandStats[item.brand] = {
-            count: 0,
-            categories: new Set(),
-            totalQuantity: 0
-          };
-        }
-        brandStats[item.brand].count++;
-        brandStats[item.brand].categories.add(item.category);
-        brandStats[item.brand].totalQuantity += item.quantity || 1;
+      const brand = item.brand || '未知品牌';
+      if (!brands[brand]) {
+        brands[brand] = {
+          count: 0,
+          totalValue: 0,
+          expiredCount: 0
+        };
+      }
+      
+      brands[brand].count++;
+      const price = parseFloat(item.price) || 0;
+      const quantity = parseInt(item.quantity) || 0;
+      brands[brand].totalValue += price * quantity;
+      
+      const status = getExpiryStatus(item.expiryDate);
+      if (status === 'expired') {
+        brands[brand].expiredCount++;
       }
     });
 
-    return Object.entries(brandStats)
+    return Object.entries(brands)
       .map(([brand, stats]) => ({
         name: brand,
-        count: stats.count,
-        categories: Array.from(stats.categories),
-        totalQuantity: stats.totalQuantity,
-        avgQuantity: Math.round(stats.totalQuantity / stats.count)
+        ...stats,
+        avgValue: stats.count > 0 ? stats.totalValue / stats.count : 0
       }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
-  };
+      .slice(0, 5);
+  }, [filteredItems]);
 
-  // 过期预警统计
-  const getExpiryWarningStats = () => {
-    const now = new Date();
-    const warningStats = {
-      expired: 0,
-      expiringToday: 0,
-      expiringThisWeek: 0,
-      expiringThisMonth: 0,
-      expiringNextMonth: 0
+  // 导出数据
+  const handleExport = () => {
+    const exportData = {
+      basicStats,
+      valueStats,
+      brandStats,
+      filteredItems
     };
 
-    filteredItems.forEach(item => {
-      const expiryDate = new Date(item.expiryDate);
-      const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
-      
-      if (daysUntilExpiry < 0) {
-        warningStats.expired++;
-      } else if (daysUntilExpiry === 0) {
-        warningStats.expiringToday++;
-      } else if (daysUntilExpiry <= 7) {
-        warningStats.expiringThisWeek++;
-      } else if (daysUntilExpiry <= 30) {
-        warningStats.expiringThisMonth++;
-      } else if (daysUntilExpiry <= 60) {
-        warningStats.expiringNextMonth++;
-      }
-    });
-
-    return warningStats;
+    dataExportManager.exportData(exportData, 'json');
   };
 
-  const brandFrequency = getBrandFrequency();
-  const expiryWarningStats = getExpiryWarningStats();
-
   return (
-    <div>
-      {/* 时间范围选择器 */}
-      <div style={{ marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
-          <Calendar size={20} color="#666" />
-          <label style={{ fontWeight: '500', color: '#333' }}>分析时间范围：</label>
-          <select
-            value={selectedTimeRange}
+    <div className="advanced-stats">
+      <div className="stats-header">
+        <h2>高级统计分析</h2>
+        <div className="stats-controls">
+          <select 
+            value={selectedTimeRange} 
             onChange={(e) => setSelectedTimeRange(e.target.value)}
-            style={{ 
-              padding: '8px 12px', 
-              border: '1px solid #ddd', 
-              borderRadius: '6px',
-              background: 'white',
-              fontSize: '14px'
-            }}
+            className="time-range-select"
           >
-            <option value="7">最近7天</option>
-            <option value="30">最近30天</option>
-            <option value="90">最近90天</option>
-            <option value="365">最近一年</option>
-            <option value="all">全部时间</option>
+            {timeRanges.map(range => (
+              <option key={range.value} value={range.value}>
+                {range.label}
+              </option>
+            ))}
           </select>
-        </div>
-        <div style={{ fontSize: '14px', color: '#666' }}>
-          当前分析范围：{selectedTimeRange === 'all' ? '全部时间' : `最近${selectedTimeRange}天`} 
-          (共 {filteredItems.length} 个物品)
-        </div>
-      </div>
-
-      {/* 过期预警统计 */}
-      <div style={{ marginBottom: '30px' }}>
-        <h3 style={{ 
-          margin: '0 0 16px 0', 
-          color: '#333', 
-          fontSize: '18px', 
-          fontWeight: '600',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px'
-        }}>
-          <AlertTriangle size={20} color="#CB4154" />
-          过期预警统计
-        </h3>
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', 
-          gap: '12px' 
-        }}>
-          <div style={{ 
-            padding: '16px', 
-            background: '#CB4154', 
-            borderRadius: '8px', 
-            color: 'white',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{expiryWarningStats.expired}</div>
-            <div style={{ fontSize: '12px' }}>已过期</div>
-          </div>
-          <div style={{ 
-            padding: '16px', 
-            background: '#E89F65', 
-            borderRadius: '8px', 
-            color: 'white',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{expiryWarningStats.expiringToday}</div>
-            <div style={{ fontSize: '12px' }}>今日过期</div>
-          </div>
-          <div style={{ 
-            padding: '16px', 
-            background: '#FFD700', 
-            borderRadius: '8px', 
-            color: 'white',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{expiryWarningStats.expiringThisWeek}</div>
-            <div style={{ fontSize: '12px' }}>本周过期</div>
-          </div>
-          <div style={{ 
-            padding: '16px', 
-            background: '#8A9A5B', 
-            borderRadius: '8px', 
-            color: 'white',
-            textAlign: 'center'
-          }}>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>{expiryWarningStats.expiringThisMonth}</div>
-            <div style={{ fontSize: '12px' }}>本月过期</div>
-          </div>
+          
+          <select 
+            value={selectedCategory} 
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="category-select"
+          >
+            <option value="all">全部分类</option>
+            <option value="药品">药品</option>
+            <option value="护肤品">护肤品</option>
+            <option value="食品">食品</option>
+            <option value="日用品">日用品</option>
+            <option value="其他">其他</option>
+          </select>
+          
+          <button 
+            onClick={handleExport}
+            className="export-btn"
+          >
+            <Download size={16} />
+            导出数据
+          </button>
         </div>
       </div>
 
-      {/* 品牌使用频率 */}
-      {brandFrequency.length > 0 && (
-        <div style={{ marginBottom: '30px' }}>
-          <h3 style={{ 
-            margin: '0 0 16px 0', 
-            color: '#333', 
-            fontSize: '18px', 
-            fontWeight: '600',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}>
-            <Package size={20} color="#8A9A5B" />
-            品牌使用频率 (前10名)
-          </h3>
-          <div style={{ 
-            background: '#f8f9fa', 
-            padding: '20px', 
-            borderRadius: '12px',
-            maxHeight: '400px',
-            overflow: 'auto'
-          }}>
-            {brandFrequency.map((brand, index) => (
-              <div key={brand.name} style={{ 
-                display: 'flex', 
-                justifyContent: 'space-between', 
-                alignItems: 'center',
-                padding: '12px 0',
-                borderBottom: index < brandFrequency.length - 1 ? '1px solid #e9ecef' : 'none'
-              }}>
-                <div>
-                  <div style={{ fontWeight: '600', color: '#333', marginBottom: '4px' }}>
-                    {brand.name}
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>
-                    {brand.categories.join(', ')} | 平均数量: {brand.avgQuantity}
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#8A9A5B' }}>
-                    {brand.count} 个
-                  </div>
-                  <div style={{ fontSize: '12px', color: '#666' }}>
-                    总数量: {brand.totalQuantity}
-                  </div>
-                </div>
+      <div className="stats-grid">
+        {/* 基础统计卡片 */}
+        <div className="stats-card basic-stats">
+          <h3>基础统计</h3>
+          <div className="stats-metrics">
+            <div className="metric">
+              <Package size={20} />
+              <span>总数: {basicStats.total}</span>
+            </div>
+            <div className="metric">
+              <AlertTriangle size={20} />
+              <span>已过期: {basicStats.expired}</span>
+            </div>
+            <div className="metric">
+              <Clock size={20} />
+              <span>即将过期: {basicStats.expiringSoon}</span>
+            </div>
+            <div className="metric">
+              <Target size={20} />
+              <span>过期率: {basicStats.expiringRate}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 价值分析卡片 */}
+        <div className="stats-card value-stats">
+          <h3>价值分析</h3>
+          <div className="stats-metrics">
+            <div className="metric">
+              <DollarSign size={20} />
+              <span>总价值: ¥{valueStats.totalValue.toFixed(2)}</span>
+            </div>
+            <div className="metric">
+              <Activity size={20} />
+              <span>平均价值: ¥{valueStats.avgValue.toFixed(2)}</span>
+            </div>
+            <div className="metric">
+              <Star size={20} />
+              <span>高价值物品: {valueStats.highValueItems}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* 品牌分析 */}
+        <div className="stats-card brand-analysis">
+          <h3>品牌分析 (Top 5)</h3>
+          <div className="brand-list">
+            {brandStats.map(brand => (
+              <div key={brand.name} className="brand-item">
+                <span className="brand-name">{brand.name}</span>
+                <span className="brand-count">{brand.count}件</span>
+                <span className="brand-value">¥{brand.avgValue.toFixed(2)}</span>
               </div>
             ))}
           </div>
         </div>
-      )}
+      </div>
     </div>
   );
 };
