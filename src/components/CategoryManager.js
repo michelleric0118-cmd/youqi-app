@@ -43,8 +43,8 @@ const CategoryManager = ({ onClose }) => {
                   </div>
                   <div className="user-actions" style={{ gap: 6 }}>
                     <input type="number" defaultValue={cat.order || 0} style={{ width: 64 }} onBlur={async (e)=>{ await setCategoryOrder(cat.id, e.target.value); await refresh(); }} />
-                    <button className="btn-secondary" onClick={async ()=>{ const name = prompt('重命名', cat.label); if(name){ await renameUserCategory(cat.id, name); await refresh(); } }}>重命名</button>
-                    <button className="delete-user-btn" onClick={async ()=>{ if(confirm('确定删除该分类？')){ await deleteUserCategory(cat.id); await refresh(); }}}>删除</button>
+                    <button className="btn-secondary" onClick={async ()=>{ const name = window.prompt('重命名', cat.label); if(name){ await renameUserCategory(cat.id, name); await refresh(); } }}>重命名</button>
+                    <button className="delete-user-btn" onClick={async ()=>{ if(window.confirm('确定删除该分类？')){ await deleteUserCategory(cat.id); await refresh(); }}}>删除</button>
                   </div>
                 </div>
               ))}

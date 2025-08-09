@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, ArrowLeft, Camera, FileText } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';

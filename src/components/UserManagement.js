@@ -216,6 +216,8 @@ const UserManagement = ({ onClose }) => {
                   </table>
                 </div>
               </div>
+            )}
+            {invites.length > 0 && (
               <div style={{ marginTop: 10, textAlign: 'right' }}>
                 <button className="btn-secondary" onClick={() => exportInviteLogsCSV(invites)}>导出使用日志</button>
               </div>

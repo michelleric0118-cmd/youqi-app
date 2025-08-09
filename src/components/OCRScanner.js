@@ -144,6 +144,7 @@ const OCRScanner = ({ onScan, onClose, onManualInput }) => {
   }, []);
 
   return (
+    <>
     <div className="ocr-scanner-overlay">
       <div className="ocr-scanner-modal">
         <div className="ocr-scanner-header">
@@ -248,6 +249,7 @@ const OCRScanner = ({ onScan, onClose, onManualInput }) => {
         }}
       />
     )}
+    </>
   );
 };
 
