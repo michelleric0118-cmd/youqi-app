@@ -5,16 +5,14 @@
   X-XSS-Protection: 1; mode=block
   Referrer-Policy: strict-origin-when-cross-origin
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';
-  Accept-Encoding: br, gzip
+  Content-Security-Policy: default-src 'self' https: data: blob:; img-src 'self' https: data: blob:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https:; connect-src *; frame-ancestors 'none';
+  # 不要强制声明 Content-Encoding/Accept-Encoding，交给 Cloudflare 自动协商
 
 /static/*
   Cache-Control: public, max-age=31536000, immutable
-  Content-Encoding: br
 
 /*.html
   Cache-Control: public, no-cache
-  Content-Encoding: br
 
 /api/*
   Cache-Control: no-store
@@ -25,12 +23,10 @@
 /*.js
   Cache-Control: public, max-age=31536000
   Content-Type: application/javascript; charset=utf-8
-  Content-Encoding: br
 
 /*.css
   Cache-Control: public, max-age=31536000
   Content-Type: text/css; charset=utf-8
-  Content-Encoding: br
 
 /images/*
   Cache-Control: public, max-age=31536000

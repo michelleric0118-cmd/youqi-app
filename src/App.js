@@ -1,4 +1,5 @@
 import React, { useState, Suspense, lazy, useEffect } from 'react';
+import { initLeanCloud, AV } from './leancloud/config';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom';
 import { Home, Package, Plus, Clock, BarChart3, Loader2, Settings as SettingsIcon } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
@@ -14,6 +15,8 @@ const ExpiringPage = lazy(() => import('./pages/Expiring'));
 const StatisticsPage = lazy(() => import('./pages/Statistics'));
 const LoginPage = lazy(() => import('./pages/Login'));
 const LeanCloudTest = lazy(() => import('./components/LeanCloudTest'));
+const OCRTest = lazy(() => import('./components/OCRTest'));
+const UpgradePage = lazy(() => import('./pages/Upgrade'));
 
 // 懒加载新功能组件
 const QRScanner = lazy(() => import('./components/QRScanner'));
@@ -144,14 +147,22 @@ function App() {
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showDataImport, setShowDataImport] = useState(false);
 
-  // 检查是否已登录（这里简化处理，实际应该检查token等）
+  // 检查是否已登录（LeanCloud session）
   const checkLoginStatus = () => {
-    const token = localStorage.getItem('user-token');
-    return !!token;
+    const token = localStorage.getItem('leancloud-session');
+    if (token) return true;
+    try {
+      const current = AV.User && AV.User.current && AV.User.current();
+      return !!current;
+    } catch (_) {
+      return false;
+    }
   };
 
-  // 监听语言变化
+  // 初始化 LeanCloud & 监听语言变化
   useEffect(() => {
+    try { initLeanCloud(); } catch (_) {}
+    setIsLoggedIn(checkLoginStatus());
     const handleLanguageChange = () => {
       // 强制重新渲染以应用新语言
       window.location.reload();
@@ -224,6 +235,8 @@ function App() {
                       <Route path="/expiring" element={<ExpiringPage />} />
                       <Route path="/statistics" element={<StatisticsPage />} />
                       <Route path="/test" element={<LeanCloudTest />} />
+                      <Route path="/ocr-test" element={<OCRTest />} />
+                       <Route path="/upgrade" element={<UpgradePage />} />
                       <Route path="/feature-test" element={
                         <FeatureTest 
                           onOpenQRScanner={() => setShowQRScanner(true)}

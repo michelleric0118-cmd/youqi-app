@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import { login, registerWithInvite } from '../../services/authService';
 
 const Login = ({ onLogin }) => {
   const navigate = useNavigate();
@@ -58,31 +59,40 @@ const Login = ({ onLogin }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!validateForm()) {
       return;
     }
 
-    // 模拟登录/注册
-    if (isLogin) {
-      // 登录逻辑
-      console.log('登录:', { username: formData.username, password: formData.password });
-      // 这里应该调用LeanCloud的用户登录API
-      localStorage.setItem('user-token', 'demo-token');
-      localStorage.setItem('username', formData.username);
-      alert('登录成功！');
-      if (onLogin) {
-        onLogin();
+    try {
+      if (isLogin) {
+        // 登录
+        await login({ username: formData.username, password: formData.password });
+        alert('登录成功！');
+        if (onLogin) onLogin();
+        navigate('/');
+      } else {
+        // 注册需要邀请码
+        const inviteCode = prompt('请输入邀请码（内测仅限20位）：');
+        const result = await registerWithInvite({
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+          inviteCode
+        });
+        alert('注册成功！已自动登录');
+        if (onLogin) onLogin();
+        navigate('/');
       }
-      navigate('/');
-    } else {
-      // 注册逻辑
-      console.log('注册:', formData);
-      // 这里应该调用LeanCloud的用户注册API
-      alert('注册成功！请登录');
-      setIsLogin(true);
+    } catch (err) {
+      const msg = err.code === 'CAP_REACHED'
+        ? '内测名额已满'
+        : err.code === 'INVITE_INVALID'
+          ? '邀请码无效或已被使用'
+          : err.message || '操作失败，请重试';
+      alert(msg);
     }
   };
 

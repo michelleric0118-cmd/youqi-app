@@ -7,25 +7,19 @@ const CLASS_NAME = 'Item';
 export const addItemToLeanCloud = async (itemData) => {
   try {
     const Item = AV.Object.extend(CLASS_NAME);
-    const newItem = new Item();
+    const item = new Item();
     
-    // 设置物品属性（排除系统保留字段）
-    for (let key in itemData) {
-      if (itemData[key] !== undefined && itemData[key] !== null && 
-          key !== 'createdAt' && key !== 'updatedAt' && key !== 'id') {
-        newItem.set(key, itemData[key]);
-      }
-    }
+    item.set('name', itemData.name);
+    item.set('category', itemData.category);
+    item.set('brand', itemData.brand || '');
+    item.set('quantity', itemData.quantity || 1);
+    item.set('productionDate', itemData.productionDate || ''); // 添加生产日期
+    item.set('expiryDate', itemData.expiryDate);
+    item.set('notes', itemData.notes || '');
+    item.set('medicineTags', itemData.medicineTags || []);
     
-    // 设置ACL权限为公共读写，避免删除时的权限问题
-    const acl = new AV.ACL();
-    acl.setPublicReadAccess(true);
-    acl.setPublicWriteAccess(true);
-    newItem.setACL(acl);
-    
-    // 不设置任何时间戳，让LeanCloud自动处理
-    const savedItem = await newItem.save();
-    return { id: savedItem.id, ...itemData };
+    const result = await item.save();
+    return result;
   } catch (error) {
     console.error('Error adding item:', error);
     throw error;
@@ -46,6 +40,7 @@ export const getItemsFromLeanCloud = async () => {
       category: item.get('category'),
       brand: item.get('brand'),
       quantity: item.get('quantity'),
+      productionDate: item.get('productionDate'), // 添加生产日期
       expiryDate: item.get('expiryDate'),
       notes: item.get('notes'),
       medicineTags: item.get('medicineTags'),

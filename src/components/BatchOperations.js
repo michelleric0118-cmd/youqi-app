@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trash2, Edit, Download, Upload, Check, X } from 'lucide-react';
+import { Trash2, Edit, Download, Upload, Check, X, FolderPlus } from 'lucide-react';
 import './BatchOperations.css';
 
 const BatchOperations = ({ 
@@ -8,10 +8,14 @@ const BatchOperations = ({
   onBatchEdit, 
   onExport, 
   onImport,
-  onClearSelection 
+  onMoveToCategory,
+  categoryOptions = [],
+  onClearSelection,
+  onOpenBatchEdit
 }) => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [operation, setOperation] = useState(null);
+  const [moveTarget, setMoveTarget] = useState('');
 
   const handleBatchDelete = () => {
     setOperation('delete');
@@ -70,7 +74,7 @@ const BatchOperations = ({
 
           <button 
             className="batch-btn batch-edit-btn"
-            onClick={handleBatchEdit}
+            onClick={() => { onOpenBatchEdit && onOpenBatchEdit(); }}
             title="批量编辑"
           >
             <Edit size={16} />
@@ -94,6 +98,22 @@ const BatchOperations = ({
             <Upload size={16} />
             导入
           </button>
+
+          {/* 批量移动到分类 */}
+          {categoryOptions.length > 0 && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <select value={moveTarget} onChange={(e)=>setMoveTarget(e.target.value)}>
+                <option value="">移动到分类</option>
+                {categoryOptions.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+              <button className="batch-btn" onClick={()=>{ if(moveTarget) onMoveToCategory(selectedItems, moveTarget); }} title="移动到分类">
+                <FolderPlus size={16} />
+                移动
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

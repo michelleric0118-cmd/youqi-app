@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Search, Trash2, Pill, Droplets, Utensils, Package2, Box, Filter, Edit } from 'lucide-react';
+import { listUserCategories } from '../../services/categoryService';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
 import toast from 'react-hot-toast';
 import EmptyState from '../../components/EmptyState';
+import BatchOperations from '../../components/BatchOperations';
+import BatchEditModal from '../../components/BatchEditModal';
+import ExportModal from '../../components/ExportModal';
 import { useNavigate } from 'react-router-dom';
+import dataExport from '../../utils/dataExport';
 
 const Items = () => {
   const { items, deleteItem, updateItem } = useLeanCloudItems();
@@ -12,7 +17,9 @@ const Items = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
+  const [customCategories, setCustomCategories] = useState([]);
   const [selectedMedicineTags, setSelectedMedicineTags] = useState([]);
+  const [selectedItemsIds, setSelectedItemsIds] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
   const [showSearchHistory, setShowSearchHistory] = useState(false);
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
@@ -75,6 +82,23 @@ const Items = () => {
     if (brandFromUrl) {
       setAdvancedFilters(prev => ({ ...prev, brand: decodeURIComponent(brandFromUrl) }));
     }
+    // 本地持久化恢复
+    try {
+      const saved = JSON.parse(localStorage.getItem('youqi-items-filters') || '{}');
+      if (saved.searchTerm && !searchFromUrl) setSearchTerm(saved.searchTerm);
+      if (saved.categoryFilter && !categoryFromUrl) setCategoryFilter(saved.categoryFilter);
+      if (saved.advancedFilters) setAdvancedFilters(prev => ({ ...prev, ...saved.advancedFilters }));
+    } catch(_) {}
+  }, []);
+
+  // 加载自定义分类
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await listUserCategories();
+        setCustomCategories(list);
+      } catch (_) {}
+    })();
   }, []);
 
   // 同步筛选条件到URL
@@ -96,16 +120,25 @@ const Items = () => {
     
     const newUrl = urlParams.toString() ? `?${urlParams.toString()}` : window.location.pathname;
     window.history.replaceState({}, '', newUrl);
+    // 本地持久化
+    try {
+      localStorage.setItem('youqi-items-filters', JSON.stringify({ searchTerm, categoryFilter, advancedFilters }));
+    } catch(_) {}
   }, [searchTerm, categoryFilter, advancedFilters.expiryStatus, advancedFilters.brand]);
 
   // 获取分类统计
   const getCategoryStats = () => {
-    const categories = ['药品', '护肤品', '食品', '日用品', '其他'];
-    return categories.map(category => ({
-      name: category,
-      count: items.filter(item => item.category === category).length,
-      icon: getCategoryIcon(category)
+    // 默认分类 + 自定义分类（去重）
+    const base = ['药品', '护肤品', '食品', '日用品', '其他'];
+    const extras = Array.from(new Set(customCategories.map(c => c.label)));
+    const categories = Array.from(new Set([...base, ...extras]));
+    const stats = categories.map(name => ({
+      name,
+      count: items.filter(item => item.category === name).length,
+      icon: getCategoryIcon(name)
     }));
+    // 数量降序，便于突出常用分类
+    return stats.sort((a,b)=>b.count - a.count);
   };
 
   // 获取分类图标
@@ -347,6 +380,18 @@ const Items = () => {
     return matchesSearch && matchesCategory && matchesMedicineTags && matchesAdvanced;
   });
 
+  const selectedItems = items.filter(i => selectedItemsIds.includes(i.id));
+
+  const toggleSelect = (id) => {
+    setSelectedItemsIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  };
+
+  const clearSelection = () => setSelectedItemsIds([]);
+  const [showBatchEdit, setShowBatchEdit] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+
+  const selectAllFiltered = () => setSelectedItemsIds(filteredItems.map(i => i.id));
+
   return (
     <div>
       <div className="card">
@@ -354,8 +399,8 @@ const Items = () => {
         
         {/* 分类统计卡片 */}
         <div className="category-stats">
-          <div className="category-scroll">
-            {getCategoryStats().map((category, index) => (
+            <div className="category-scroll">
+              {getCategoryStats().map((category, index) => (
               <button 
                 key={category.name} 
                 onClick={() => setCategoryFilter(categoryFilter === category.name ? '' : category.name)}
@@ -366,6 +411,7 @@ const Items = () => {
                 <div className="category-count">{category.count}</div>
               </button>
             ))}
+              {/* 父子层级展开/收起可在后续加入树形UI */}
           </div>
         </div>
         
@@ -820,6 +866,60 @@ const Items = () => {
           </div>
         )}
 
+        {/* 批量操作栏（可选） */}
+        {filteredItems.length > 0 && (
+          <BatchOperations
+            selectedItems={selectedItemsIds}
+            onBatchDelete={async (ids)=>{
+              if (!ids || ids.length===0) return;
+              for (const id of ids) await deleteItem(id);
+              clearSelection();
+              toast.success('已删除选中物品');
+            }}
+            onBatchEdit={() => {}}
+            onOpenBatchEdit={() => setShowBatchEdit(true)}
+            onExport={()=> setShowExport(true)}
+            onImport={() => { toast('请在数据管理入口导入'); }}
+            onMoveToCategory={async (ids, target)=>{
+              try {
+                for (const id of ids) await updateItem(id, { category: target });
+                toast.success('已移动到分类');
+              } catch (e) { toast.error('移动失败'); }
+            }}
+            categoryOptions={[...new Set(['药品','护肤品','食品','日用品','其他', ...customCategories.map(c=>c.label)])].map(v=>({ value: v, label: v }))}
+            onClearSelection={clearSelection}
+          />
+        )}
+        <ExportModal
+          open={showExport}
+          onClose={()=>setShowExport(false)}
+          onConfirm={(fmt)=>{
+            const exportItems = items.filter(i => selectedItemsIds.includes(i.id));
+            dataExport.exportData(exportItems, fmt);
+            setShowExport(false);
+          }}
+        />
+
+        {/* 批量编辑对话框 */}
+        <BatchEditModal
+          open={showBatchEdit}
+          onClose={()=>setShowBatchEdit(false)}
+          categories={[...new Set(['药品','护肤品','食品','日用品','其他', ...customCategories.map(c=>c.label)])].map(v=>({ value: v, label: v }))}
+          onApply={async ({ category, brand, notesAppend })=>{
+            try {
+              for (const id of selectedItemsIds) {
+                const patch = {};
+                if (category) patch.category = category;
+                if (brand) patch.brand = brand;
+                if (notesAppend) patch.notes = ((items.find(i=>i.id===id)?.notes)||'') + (patch.notes? ' ' : '') + notesAppend;
+                await updateItem(id, patch);
+              }
+              toast.success('批量编辑已应用');
+              setShowBatchEdit(false);
+            } catch (e) { toast.error('批量编辑失败'); }
+          }}
+        />
+
         {/* 物品列表 */}
         <div className="items-list">
           {filteredItems.length === 0 ? (
@@ -855,6 +955,7 @@ const Items = () => {
                   onClick={() => navigate(`/edit/${item.id}`)}
                 >
                   <div className="item-header">
+                    <input type="checkbox" checked={selectedItemsIds.includes(item.id)} onChange={()=>toggleSelect(item.id)} onClick={(e)=>e.stopPropagation()} />
                     <div className="item-name">{item.name}</div>
                     <div className="item-category">{item.category}</div>
                   </div>

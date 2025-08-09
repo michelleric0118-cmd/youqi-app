@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
-import { Settings as SettingsIcon, Globe, Bell, Database } from 'lucide-react';
+import { Settings as SettingsIcon, Globe, Bell, Database, Users } from 'lucide-react';
 import i18n from '../utils/i18n';
 import backupManager from '../utils/backup';
 import notificationManager from '../utils/notifications';
+import UserManagement from './UserManagement';
+import CategoryManager from './CategoryManager';
+import { AV } from '../leancloud/config';
 import './Settings.css';
 
 const Settings = ({ onClose, onOpenLanguageSettings, onOpenDataImport }) => {
@@ -10,6 +13,8 @@ const Settings = ({ onClose, onOpenLanguageSettings, onOpenDataImport }) => {
   const [elderMode, setElderMode] = useState(false);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [autoBackup, setAutoBackup] = useState(true);
+  const [showUserManagement, setShowUserManagement] = useState(false);
+  const [showCategoryManager, setShowCategoryManager] = useState(false);
 
   const handleElderModeToggle = () => {
     const newMode = !elderMode;
@@ -53,7 +58,8 @@ const Settings = ({ onClose, onOpenLanguageSettings, onOpenDataImport }) => {
     { id: 'general', name: '通用设置', icon: SettingsIcon },
     { id: 'language', name: '语言设置', icon: Globe },
     { id: 'notifications', name: '通知设置', icon: Bell },
-    { id: 'backup', name: '备份设置', icon: Database }
+    { id: 'backup', name: '备份设置', icon: Database },
+    { id: 'users', name: '用户管理', icon: Users }
   ];
 
   const renderGeneralSettings = () => (
@@ -88,6 +94,19 @@ const Settings = ({ onClose, onOpenLanguageSettings, onOpenDataImport }) => {
           />
           <span className="toggle-slider"></span>
         </label>
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-info">
+          <h4>当前账号</h4>
+          <p>{AV.User.current()?.get('username') || '未登录'}</p>
+          {!!AV.User.current() && (
+            <small>角色：{AV.User.current()?.get('role') || 'user'}</small>
+          )}
+        </div>
+        {AV.User.current() && (
+          <button className="btn-secondary" onClick={() => { AV.User.logOut(); localStorage.removeItem('leancloud-session'); window.location.reload(); }}>退出登录</button>
+        )}
       </div>
     </div>
   );
@@ -192,10 +211,44 @@ const Settings = ({ onClose, onOpenLanguageSettings, onOpenDataImport }) => {
         return renderNotificationSettings();
       case 'backup':
         return renderBackupSettings();
+      case 'users':
+        return renderUserSettings();
       default:
         return renderGeneralSettings();
     }
   };
+
+  const renderUserSettings = () => (
+    <div className="settings-section">
+      <h3>用户管理</h3>
+      
+      <div className="setting-item">
+        <div className="setting-info">
+          <h4>内测用户管理</h4>
+          <p>管理内测用户和邀请码</p>
+        </div>
+        <button 
+          className="btn-secondary"
+          onClick={() => setShowUserManagement(true)}
+        >
+          管理用户
+        </button>
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-info">
+          <h4>分类管理</h4>
+          <p>管理自定义分类（重命名/删除/排序/父子层级）</p>
+        </div>
+        <button className="btn-secondary" onClick={() => setShowCategoryManager(true)}>管理分类</button>
+      </div>
+
+      <div className="beta-info">
+        <h4>内测说明</h4>
+        <p>当前为内测阶段，限制20个用户名额。新用户需要邀请码才能注册。</p>
+      </div>
+    </div>
+  );
 
   return (
     <div className="settings-overlay">
@@ -232,6 +285,14 @@ const Settings = ({ onClose, onOpenLanguageSettings, onOpenDataImport }) => {
           </div>
         </div>
       </div>
+
+      {/* 用户管理组件 */}
+      {showUserManagement && (
+        <UserManagement onClose={() => setShowUserManagement(false)} />
+      )}
+      {showCategoryManager && (
+        <CategoryManager onClose={() => setShowCategoryManager(false)} />
+      )}
     </div>
   );
 };

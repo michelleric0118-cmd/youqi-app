@@ -1,0 +1,8 @@
+# 优先放行静态资源（防止被 SPA 回退覆盖）
+/static/*           /static/:splat   200
+/favicon.ico        /favicon.ico     200
+/manifest.json      /manifest.json   200
+/logo*.png          /:splat          200
+
+# 其余路径走 SPA 回退
+/*                  /index.html      200

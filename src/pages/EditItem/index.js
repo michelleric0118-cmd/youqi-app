@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Save, ArrowLeft, Camera } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
-import { CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
+import { DEFAULT_CATEGORIES, buildCategories, MEDICINE_TAGS } from '../../utils/itemUtils';
+import { listUserCategories, createUserCategory } from '../../services/categoryService';
 import BarcodeScanner from '../../components/BarcodeScanner';
 import toast from 'react-hot-toast';
 
@@ -16,6 +17,7 @@ const EditItem = () => {
     category: '',
     brand: '',
     quantity: 1,
+    productionDate: '', // 添加生产日期字段
     expiryDate: '',
     notes: ''
   });
@@ -24,6 +26,8 @@ const EditItem = () => {
   const [errors, setErrors] = useState({});
   const [showScanner, setShowScanner] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [customCategories, setCustomCategories] = useState([]);
+  const [newCategory, setNewCategory] = useState('');
 
   // 加载物品数据
   useEffect(() => {
@@ -34,6 +38,7 @@ const EditItem = () => {
         category: item.category || '',
         brand: item.brand || '',
         quantity: item.quantity || 1,
+        productionDate: item.productionDate || '',
         expiryDate: item.expiryDate || '',
         notes: item.notes || ''
       });
@@ -44,6 +49,16 @@ const EditItem = () => {
     }
     setLoading(false);
   }, [id, items, navigate]);
+
+  // 加载自定义分类
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await listUserCategories();
+        setCustomCategories(list);
+      } catch (_) {}
+    })();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -245,11 +260,31 @@ const EditItem = () => {
               className={errors.category ? 'error' : ''}
             >
               <option value="">请选择分类</option>
-              {CATEGORIES.map(category => (
+              {buildCategories(customCategories).map(category => (
                 <option key={category.value} value={category.value}>{category.label}</option>
               ))}
             </select>
             {errors.category && <span className="error-message">{errors.category}</span>}
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <input
+                type="text"
+                placeholder="新建自定义分类"
+                value={newCategory}
+                onChange={(e)=>setNewCategory(e.target.value)}
+              />
+              <button type="button" className="btn-secondary" onClick={async ()=>{
+                const label = newCategory.trim();
+                if (!label) return;
+                try {
+                  await createUserCategory(label);
+                  const list = await listUserCategories();
+                  setCustomCategories(list);
+                  setNewCategory('');
+                } catch (e) {
+                  alert(e.message || '创建失败');
+                }
+              }}>新增分类</button>
+            </div>
           </div>
 
           {/* 品牌 */}
@@ -276,6 +311,18 @@ const EditItem = () => {
               onChange={handleInputChange}
               min="1"
               max="999"
+            />
+          </div>
+
+          {/* 生产日期 */}
+          <div className="form-group">
+            <label htmlFor="productionDate">生产日期</label>
+            <input
+              type="date"
+              id="productionDate"
+              name="productionDate"
+              value={formData.productionDate}
+              onChange={handleInputChange}
             />
           </div>
 

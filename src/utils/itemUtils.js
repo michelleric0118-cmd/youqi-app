@@ -51,13 +51,22 @@ export const MEDICINE_TAGS = [
 ];
 
 // 分类选项
-export const CATEGORIES = [
+export const DEFAULT_CATEGORIES = [
   { value: '药品', label: '药品' },
   { value: '护肤品', label: '护肤品' },
   { value: '食品', label: '食品' },
   { value: '日用品', label: '日用品' },
   { value: '其他', label: '其他' }
 ];
+
+// 组合默认分类与用户自定义分类
+export const buildCategories = (custom = []) => {
+  const map = new Map();
+  [...DEFAULT_CATEGORIES, ...custom].forEach(c => {
+    if (!map.has(c.value)) map.set(c.value, c);
+  });
+  return Array.from(map.values());
+};
 
 // 生成测试数据
 export const generateTestData = () => {

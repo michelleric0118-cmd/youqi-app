@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, ArrowLeft, Camera } from 'lucide-react';
+import { Save, ArrowLeft, Camera, FileText } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
-import { CATEGORIES, MEDICINE_TAGS } from '../../utils/itemUtils';
+import { DEFAULT_CATEGORIES, buildCategories, MEDICINE_TAGS } from '../../utils/itemUtils';
+import { listUserCategories, createUserCategory } from '../../services/categoryService';
 import BarcodeScanner from '../../components/BarcodeScanner';
+import OCRScanner from '../../components/OCRScanner';
 import { generateProductInfo } from '../../services/productDatabase';
 import toast from 'react-hot-toast';
 
@@ -16,6 +18,7 @@ const AddItem = () => {
     category: '',
     brand: '',
     quantity: 1,
+    productionDate: '', // 添加生产日期字段
     expiryDate: '',
     notes: ''
   });
@@ -23,6 +26,18 @@ const AddItem = () => {
   const [selectedMedicineTags, setSelectedMedicineTags] = useState([]);
   const [errors, setErrors] = useState({});
   const [showScanner, setShowScanner] = useState(false);
+  const [customCategories, setCustomCategories] = useState([]);
+  const [newCategory, setNewCategory] = useState('');
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await listUserCategories();
+        setCustomCategories(list);
+      } catch (_) {}
+    })();
+  }, []);
+  const [showOCRScanner, setShowOCRScanner] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -164,6 +179,12 @@ const AddItem = () => {
           onClose={() => setShowScanner(false)}
         />
       )}
+      {showOCRScanner && (
+        <OCRScanner
+          onScan={handleScanResult} // 使用相同的回调处理OCR结果
+          onClose={() => setShowOCRScanner(false)}
+        />
+      )}
       
       <div className="card">
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '20px' }}>
@@ -189,6 +210,20 @@ const AddItem = () => {
             >
               <Camera size={20} style={{ marginRight: '8px' }} />
               扫描条形码
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowOCRScanner(true)}
+              className="btn"
+              style={{ 
+                background: 'var(--sage-green)', 
+                color: 'white',
+                padding: '12px 24px',
+                fontSize: '1rem'
+              }}
+            >
+              <FileText size={20} style={{ marginRight: '8px' }} />
+              扫描文字
             </button>
 
           </div>
@@ -219,11 +254,31 @@ const AddItem = () => {
               className={errors.category ? 'error' : ''}
             >
               <option value="">请选择分类</option>
-              {CATEGORIES.map(category => (
+              {buildCategories(customCategories).map(category => (
                 <option key={category.value} value={category.value}>{category.label}</option>
               ))}
             </select>
             {errors.category && <span className="error-message">{errors.category}</span>}
+            <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+              <input
+                type="text"
+                placeholder="新建自定义分类，如：饮料/母婴/储备粮"
+                value={newCategory}
+                onChange={(e)=>setNewCategory(e.target.value)}
+              />
+              <button type="button" className="btn-secondary" onClick={async ()=>{
+                const label = newCategory.trim();
+                if (!label) return;
+                try {
+                  await createUserCategory(label);
+                  const list = await listUserCategories();
+                  setCustomCategories(list);
+                  setNewCategory('');
+                } catch (e) {
+                  alert(e.message || '创建失败');
+                }
+              }}>新增分类</button>
+            </div>
           </div>
 
           {/* 品牌 */}
@@ -250,6 +305,18 @@ const AddItem = () => {
               onChange={handleInputChange}
               min="1"
               max="999"
+            />
+          </div>
+
+          {/* 生产日期 */}
+          <div className="form-group">
+            <label htmlFor="productionDate">生产日期</label>
+            <input
+              type="date"
+              id="productionDate"
+              name="productionDate"
+              value={formData.productionDate}
+              onChange={handleInputChange}
             />
           </div>
 
