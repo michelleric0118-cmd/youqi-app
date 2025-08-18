@@ -48,16 +48,23 @@
   background: none;
   border: none;
   font-size: 24px;
-  color: #666;
+  color: #333;
   cursor: pointer;
-  padding: 4px;
-  border-radius: 4px;
+  padding: 8px;
+  border-radius: 6px;
   transition: all 0.2s;
+  font-weight: bold;
+  min-width: 40px;
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .close-btn:hover {
   background: #f0f0f0;
-  color: #333;
+  color: #000;
+  transform: scale(1.1);
 }
 
 .settings-content {

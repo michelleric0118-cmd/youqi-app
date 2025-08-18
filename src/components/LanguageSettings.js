@@ -73,11 +73,7 @@ const LanguageSettings = ({ onClose }) => {
             ))}
           </div>
 
-          <div className="language-note">
-            <p>
-              💡 提示：语言设置会保存到本地，下次访问时会自动应用
-            </p>
-          </div>
+          {/* 冗余提示已删除 - 用户选择后立即能看到效果 */}
         </div>
       </div>
     </div>

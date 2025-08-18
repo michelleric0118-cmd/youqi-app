@@ -25,6 +25,10 @@ const Items = () => {
   const [showSearchSuggestions, setShowSearchSuggestions] = useState(false);
   const [searchSuggestions, setSearchSuggestions] = useState([]);
   
+  // 快捷编辑状态
+  const [editingQuantity, setEditingQuantity] = useState(null);
+  const [editingValue, setEditingValue] = useState('');
+  
   // 高级筛选状态
   const [showAdvancedFilter, setShowAdvancedFilter] = useState(false);
   const [advancedFilters, setAdvancedFilters] = useState({
@@ -197,7 +201,11 @@ const Items = () => {
 
 
   const handleDelete = (id) => {
-    if (window.confirm('确定要删除这个物品吗？')) {
+    // 找到要删除的物品，获取其名称
+    const itemToDelete = items.find(item => item.id === id);
+    const itemName = itemToDelete ? itemToDelete.name : '这个物品';
+    
+    if (window.confirm(`删除「${itemName}」？\n\n此操作无法撤销。`)) {
       try {
         deleteItem(id);
       } catch (error) {
@@ -216,14 +224,55 @@ const Items = () => {
       const newQuantity = currentQuantity - 1;
       await updateItem(id, { quantity: newQuantity });
       
+      // 使用简洁的通知消息，避免重复
       if (newQuantity === 0) {
-        toast.success('物品已用完');
+        toast.success('✅ 已用完');
       } else {
-        toast.success('已使用一个');
+        // 使用更具体的消息，避免与其他数量更新操作混淆
+        toast.success('✅ 已使用1个');
       }
     } catch (error) {
       console.error('使用物品失败:', error);
       toast.error('操作失败，请重试');
+    }
+  };
+
+  // 快速调整数量（上下箭头）
+  const handleQuickAdjustQuantity = async (id, currentQuantity, adjustment) => {
+    const newQuantity = Math.max(0, currentQuantity + adjustment);
+    
+    // 如果数量没有变化，不执行更新
+    if (newQuantity === currentQuantity) {
+      return;
+    }
+    
+    try {
+      await updateItem(id, { quantity: newQuantity });
+      
+      // 根据调整方向显示不同的消息，避免重复
+      if (adjustment > 0) {
+        toast.success(`✅ 已增加至 ${newQuantity}`);
+      } else {
+        toast.success(`✅ 已减少至 ${newQuantity}`);
+      }
+    } catch (error) {
+      console.error('更新数量失败:', error);
+      toast.error('更新失败，请重试');
+    }
+  };
+
+  // 取消快捷编辑
+  const handleCancelQuickEdit = () => {
+    setEditingQuantity(null);
+    setEditingValue('');
+  };
+
+  // 处理快捷编辑的键盘事件
+  const handleQuickEditKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSaveQuickEdit();
+    } else if (e.key === 'Escape') {
+      handleCancelQuickEdit();
     }
   };
 
@@ -391,6 +440,43 @@ const Items = () => {
   const [showExport, setShowExport] = useState(false);
 
   const selectAllFiltered = () => setSelectedItemsIds(filteredItems.map(i => i.id));
+
+  // 快捷编辑数量
+  const handleQuickEditQuantity = (id, currentQuantity) => {
+    setEditingQuantity(id);
+    setEditingValue(currentQuantity.toString());
+  };
+
+  // 保存快捷编辑的数量
+  const handleSaveQuickEdit = async () => {
+    if (!editingQuantity || !editingValue.trim()) return;
+    
+    const newQuantity = parseInt(editingValue);
+    if (isNaN(newQuantity) || newQuantity < 0) {
+      toast.error('请输入有效的数量');
+      return;
+    }
+    
+    // 检查数量是否真的发生了变化
+    const currentItem = items.find(item => item.id === editingQuantity);
+    if (currentItem && currentItem.quantity === newQuantity) {
+      // 数量没有变化，直接关闭编辑模式
+      setEditingQuantity(null);
+      setEditingValue('');
+      return;
+    }
+    
+    try {
+      await updateItem(editingQuantity, { quantity: newQuantity });
+      // 使用更具体的消息，避免重复
+      toast.success(`✅ 已更新为 ${newQuantity}`);
+      setEditingQuantity(null);
+      setEditingValue('');
+    } catch (error) {
+      console.error('更新数量失败:', error);
+      toast.error('更新失败，请重试');
+    }
+  };
 
   return (
     <div>
@@ -645,6 +731,156 @@ const Items = () => {
           </div>
         </div>
 
+        {/* 筛选状态显示 */}
+        {hasActiveFilters && (
+          <div style={{ 
+            marginTop: '15px', 
+            padding: '12px 16px', 
+            background: '#f8f9fa', 
+            border: '1px solid #e9ecef', 
+            borderRadius: '8px',
+            borderLeft: '4px solid #8A9A5B'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <Filter size={16} style={{ color: '#8A9A5B' }} />
+              <span style={{ fontSize: '14px', fontWeight: '500', color: '#495057' }}>当前筛选条件</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {/* 分类筛选 */}
+              {categoryFilter && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 8px',
+                  background: '#e3f2fd',
+                  color: '#1976d2',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  border: '1px solid #bbdefb'
+                }}>
+                  <span>分类: {categoryFilter}</span>
+                  <button
+                    onClick={() => setCategoryFilter('')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#1976d2',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      padding: '0',
+                      width: '16px',
+                      height: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="清除分类筛选"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {/* 过期状态筛选 */}
+              {advancedFilters.expiryStatus && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 8px',
+                  background: advancedFilters.expiryStatus === 'expired' ? '#ffebee' : 
+                             advancedFilters.expiryStatus === 'expiring-soon' ? '#fff3e0' : '#e8f5e8',
+                  color: advancedFilters.expiryStatus === 'expired' ? '#c62828' : 
+                         advancedFilters.expiryStatus === 'expiring-soon' ? '#ef6c00' : '#2e7d32',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  border: advancedFilters.expiryStatus === 'expired' ? '1px solid #ffcdd2' : 
+                          advancedFilters.expiryStatus === 'expiring-soon' ? '1px solid #ffe0b2' : '1px solid #c8e6c9'
+                }}>
+                  <span>过期状态: {
+                    advancedFilters.expiryStatus === 'expired' ? '已过期' :
+                    advancedFilters.expiryStatus === 'expiring-soon' ? '即将过期' : '正常'
+                  }</span>
+                  <button
+                    onClick={() => handleAdvancedFilterChange('expiryStatus', '')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: 'inherit',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      padding: '0',
+                      width: '16px',
+                      height: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="清除过期状态筛选"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+              
+              {/* 搜索词筛选 */}
+              {searchTerm && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '4px 8px',
+                  background: '#fff3e0',
+                  color: '#ef6c00',
+                  borderRadius: '16px',
+                  fontSize: '12px',
+                  border: '1px solid #ffe0b2'
+                }}>
+                  <span>搜索: "{searchTerm}"</span>
+                  <button
+                    onClick={() => handleSearch('')}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: '#ef6c00',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      padding: '0',
+                      width: '16px',
+                      height: '16px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="清除搜索"
+                  >
+                    ×
+                  </button>
+                </span>
+              )}
+            </div>
+            
+            {/* 筛选结果统计 */}
+            <div style={{ 
+              marginTop: '8px', 
+              padding: '8px 12px', 
+              background: 'white', 
+              borderRadius: '6px', 
+              border: '1px solid #e9ecef',
+              fontSize: '12px',
+              color: '#6c757d'
+            }}>
+              <span>找到 <strong>{filteredItems.length}</strong> 个物品</span>
+              {filteredItems.length !== items.length && (
+                <span style={{ marginLeft: '12px' }}>
+                  (共 {items.length} 个物品)
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 高级筛选 */}
         <div style={{ marginTop: '20px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
@@ -791,81 +1027,6 @@ const Items = () => {
           )}
         </div>
 
-        {/* 筛选结果统计 */}
-        {hasActiveFilters && (
-          <div style={{ 
-            marginTop: '15px', 
-            padding: '15px', 
-            background: '#f8f9fa', 
-            borderRadius: '8px',
-            border: '1px solid #e9ecef'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <Search size={16} style={{ color: '#8A9A5B' }} />
-                <span style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>
-                  找到 {filteredItems.length} 个物品
-                </span>
-                {items.length > 0 && (
-                  <span style={{ fontSize: '12px', color: '#666' }}>
-                    (共 {items.length} 个)
-                  </span>
-                )}
-              </div>
-              
-              {/* 显示当前筛选条件 */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                {searchTerm && (
-                  <span style={{ 
-                    padding: '4px 8px', 
-                    background: '#8A9A5B', 
-                    color: 'white', 
-                    borderRadius: '12px', 
-                    fontSize: '12px' 
-                  }}>
-                    搜索: {searchTerm}
-                  </span>
-                )}
-                {categoryFilter && (
-                  <span style={{ 
-                    padding: '4px 8px', 
-                    background: '#E89F65', 
-                    color: 'white', 
-                    borderRadius: '12px', 
-                    fontSize: '12px' 
-                  }}>
-                    分类: {categoryFilter}
-                  </span>
-                )}
-                {advancedFilters.expiryStatus && (
-                  <span style={{ 
-                    padding: '4px 8px', 
-                    background: advancedFilters.expiryStatus === 'expired' ? '#CB4154' : 
-                              advancedFilters.expiryStatus === 'expiring-soon' ? '#E89F65' : '#8A9A5B', 
-                    color: 'white', 
-                    borderRadius: '12px', 
-                    fontSize: '12px' 
-                  }}>
-                    状态: {advancedFilters.expiryStatus === 'expired' ? '已过期' : 
-                           advancedFilters.expiryStatus === 'expiring-soon' ? '即将过期' : '正常'}
-                  </span>
-                )}
-                {advancedFilters.brand && (
-                  <span style={{ 
-                    padding: '4px 8px', 
-                    background: '#4A4A4A', 
-                    color: 'white', 
-                    borderRadius: '12px', 
-                    fontSize: '12px' 
-                  }}>
-                    品牌: {advancedFilters.brand}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* 批量操作栏（可选） */}
         {filteredItems.length > 0 && (
           <BatchOperations
@@ -874,7 +1035,7 @@ const Items = () => {
               if (!ids || ids.length===0) return;
               for (const id of ids) await deleteItem(id);
               clearSelection();
-              toast.success('已删除选中物品');
+              toast.success('✅ 已删除');
             }}
             onBatchEdit={() => {}}
             onOpenBatchEdit={() => setShowBatchEdit(true)}
@@ -883,8 +1044,10 @@ const Items = () => {
             onMoveToCategory={async (ids, target)=>{
               try {
                 for (const id of ids) await updateItem(id, { category: target });
-                toast.success('已移动到分类');
-              } catch (e) { toast.error('移动失败'); }
+                toast.success('✅ 已移动');
+              } catch (e) { 
+                toast.error('移动失败'); 
+              }
             }}
             categoryOptions={[...new Set(['药品','护肤品','食品','日用品','其他', ...customCategories.map(c=>c.label)])].map(v=>({ value: v, label: v }))}
             onClearSelection={clearSelection}
@@ -914,9 +1077,9 @@ const Items = () => {
                 if (notesAppend) patch.notes = ((items.find(i=>i.id===id)?.notes)||'') + (patch.notes? ' ' : '') + notesAppend;
                 await updateItem(id, patch);
               }
-              toast.success('批量编辑已应用');
+              toast.success('✅ 已应用');
               setShowBatchEdit(false);
-            } catch (e) { toast.error('批量编辑失败'); }
+            } catch (e) { toast.error('应用失败'); }
           }}
         />
 
@@ -924,22 +1087,32 @@ const Items = () => {
         <div className="items-list">
           {filteredItems.length === 0 ? (
             hasActiveFilters ? (
-              <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-                <Search size={48} style={{ marginBottom: '20px', opacity: 0.5 }} />
-                <p>没有找到符合条件的物品</p>
-                <button
-                  onClick={clearAllFilters}
-                  className="btn btn-secondary"
-                  style={{ marginTop: '10px' }}
-                >
-                  清除所有筛选条件
-                </button>
-              </div>
+              <EmptyState
+                type="filter"
+                message="当前筛选条件下没有找到物品"
+                onActionClick={clearAllFilters}
+                actionText="清除筛选"
+                secondaryAction="查看全部物品"
+                onSecondaryActionClick={() => {
+                  clearAllFilters();
+                  setSearchTerm('');
+                }}
+              />
+            ) : items.length === 0 ? (
+              <EmptyState
+                type="default"
+                onActionClick={() => window.location.href = '/add'}
+                actionText=""
+                showIconOnly={true}
+              />
             ) : (
               <EmptyState
-                message="这里还没有物品哦，开始记录你的第一个物品吧！"
-                onActionClick={() => window.location.href = '/add'}
-                actionText="添加第一个物品"
+                type="search"
+                message={`没有找到包含"${searchTerm}"的物品`}
+                onActionClick={() => handleSearch('')}
+                actionText="清除搜索"
+                secondaryAction="添加新物品"
+                onSecondaryActionClick={() => window.location.href = '/add'}
               />
             )
           ) : (
@@ -956,16 +1129,144 @@ const Items = () => {
                 >
                   <div className="item-header">
                     <input type="checkbox" checked={selectedItemsIds.includes(item.id)} onChange={()=>toggleSelect(item.id)} onClick={(e)=>e.stopPropagation()} />
-                    <div className="item-name">{item.name}</div>
+                    <div className="item-name" style={{ textAlign: 'left' }}>{item.name}</div>
                     <div className="item-category">{item.category}</div>
                   </div>
                   <div className="item-details">
-                    {item.brand && `品牌: ${item.brand} | `}
-                    数量: {item.quantity} | 
+                    {item.brand && <span className="primary-info">品牌: {item.brand} | </span>}
+                    <span className="primary-info">数量: </span>
+                    {editingQuantity === item.id ? (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
+                        <input
+                          type="number"
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          onKeyDown={handleQuickEditKeyDown}
+                          onBlur={handleSaveQuickEdit}
+                          style={{
+                            width: '60px',
+                            padding: '2px 6px',
+                            border: '1px solid #007bff',
+                            borderRadius: '4px',
+                            fontSize: '14px'
+                          }}
+                          autoFocus
+                          min="0"
+                          max="999"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSaveQuickEdit();
+                          }}
+                          style={{
+                            padding: '2px 6px',
+                            background: '#28a745',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                          title="保存"
+                        >
+                          ✓
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleCancelQuickEdit();
+                          }}
+                          style={{
+                            padding: '2px 6px',
+                            background: '#dc3545',
+                            color: 'white',
+                            border: 'none',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '12px'
+                          }}
+                          title="取消"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickAdjustQuantity(item.id, item.quantity, -1);
+                          }}
+                          style={{
+                            padding: '2px 4px',
+                            background: '#f3f4f6',
+                            color: '#374151',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '20px',
+                            height: '20px'
+                          }}
+                          title="减少数量"
+                          disabled={item.quantity <= 0}
+                        >
+                          ↓
+                        </button>
+                        <span 
+                          className="quantity-editable"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickEditQuantity(item.id, item.quantity);
+                          }}
+                          style={{
+                            cursor: 'pointer',
+                            padding: '2px 6px',
+                            background: '#f0f0f0',
+                            borderRadius: '4px',
+                            marginLeft: '4px',
+                            userSelect: 'none',
+                            minWidth: '30px',
+                            textAlign: 'center'
+                          }}
+                          title="点击编辑数量"
+                        >
+                          {item.quantity}
+                        </span>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleQuickAdjustQuantity(item.id, item.quantity, 1);
+                          }}
+                          style={{
+                            padding: '2px 4px',
+                            background: '#f3f4f6',
+                            color: '#374151',
+                            border: '1px solid #d1d5db',
+                            borderRadius: '4px',
+                            cursor: 'pointer',
+                            fontSize: '10px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            width: '20px',
+                            height: '20px'
+                          }}
+                          title="增加数量"
+                        >
+                          ↑
+                        </button>
+                      </div>
+                    )}
+                    | 
                     <span className={expiryInfo.className}> {expiryInfo.text}</span>
                   </div>
                   {item.notes && (
-                    <div className="item-details" style={{ marginTop: '5px' }}>
+                    <div className="item-notes">
                       备注: {item.notes}
                     </div>
                   )}
@@ -979,7 +1280,7 @@ const Items = () => {
                   
                   {/* 操作按钮 */}
                   <div 
-                    style={{ marginTop: '10px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}
+                    className="item-actions"
                     onClick={(e) => e.stopPropagation()} // 防止触发卡片的点击事件
                   >
                     {item.quantity > 0 && (

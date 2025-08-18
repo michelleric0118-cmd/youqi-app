@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Clock, AlertTriangle, XCircle, Trash2, Calendar, Download, CheckSquare, Square } from 'lucide-react';
 import { useLeanCloudItems } from '../../hooks/useLeanCloudItems';
 import { getExpiryStatus, getExpiryText } from '../../utils/itemUtils';
+import toast from 'react-hot-toast';
+import EmptyState from '../../components/EmptyState';
 
 const Expiring = () => {
   const { getExpiringItems, deleteItem, updateItem } = useLeanCloudItems();
@@ -9,6 +11,10 @@ const Expiring = () => {
   const [showActions, setShowActions] = useState({});
   const [selectedItems, setSelectedItems] = useState([]);
   const [showBatchActions, setShowBatchActions] = useState(false);
+  
+  // 快捷编辑状态
+  const [editingQuantity, setEditingQuantity] = useState(null);
+  const [editingValue, setEditingValue] = useState('');
 
   const filterOptions = [
     { value: 'expired', label: '已过期', icon: XCircle },
@@ -51,7 +57,11 @@ const Expiring = () => {
   const stats = getFilterStats();
 
   const handleDelete = (id) => {
-    if (window.confirm('确定要删除这个物品吗？')) {
+    // 找到要删除的物品，获取其名称
+    const itemToDelete = sortedItems.find(item => item.id === id);
+    const itemName = itemToDelete ? itemToDelete.name : '这个物品';
+    
+    if (window.confirm(`删除「${itemName}」？\n\n此操作无法撤销。`)) {
       deleteItem(id);
       // 从选中列表中移除
       setSelectedItems(prev => prev.filter(itemId => itemId !== id));
@@ -106,11 +116,11 @@ const Expiring = () => {
   // 批量删除
   const handleBatchDelete = () => {
     if (selectedItems.length === 0) {
-      alert('请先选择要删除的物品');
+      toast.error('请先选择要删除的物品');
       return;
     }
     
-    if (window.confirm(`确定要删除选中的 ${selectedItems.length} 个物品吗？`)) {
+    if (window.confirm(`删除选中的 ${selectedItems.length} 个物品？\n\n此操作无法撤销。`)) {
       selectedItems.forEach(id => {
         deleteItem(id);
       });
@@ -122,7 +132,7 @@ const Expiring = () => {
   // 批量延期
   const handleBatchDelay = (days = 30) => {
     if (selectedItems.length === 0) {
-      alert('请先选择要延期的物品');
+      toast.error('请先选择要延期的物品');
       return;
     }
     
@@ -150,7 +160,7 @@ const Expiring = () => {
     }));
 
     if (itemsToExport.length === 0) {
-      alert('没有数据可以导出');
+      toast.error('没有数据可以导出');
       return;
     }
 
@@ -193,27 +203,93 @@ const Expiring = () => {
     return getExpiryPriority(a) - getExpiryPriority(b);
   });
 
+  // 快捷编辑数量
+  const handleQuickEditQuantity = (id, currentQuantity) => {
+    setEditingQuantity(id);
+    setEditingValue(currentQuantity.toString());
+  };
+
+  // 保存快捷编辑的数量
+  const handleSaveQuickEdit = async () => {
+    if (!editingQuantity || !editingValue.trim()) return;
+    
+    const newQuantity = parseInt(editingValue);
+    if (isNaN(newQuantity) || newQuantity < 0) {
+      toast.error('请输入有效的数量');
+      return;
+    }
+    
+    try {
+      await updateItem(editingQuantity, { quantity: newQuantity });
+      toast.success('数量更新成功！');
+      setEditingQuantity(null);
+      setEditingValue('');
+    } catch (error) {
+      console.error('更新数量失败:', error);
+      toast.error('更新失败，请重试');
+    }
+  };
+
+  // 取消快捷编辑
+  const handleCancelQuickEdit = () => {
+    setEditingQuantity(null);
+    setEditingValue('');
+  };
+
+  // 处理快捷编辑的键盘事件
+  const handleQuickEditKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSaveQuickEdit();
+    } else if (e.key === 'Escape') {
+      handleCancelQuickEdit();
+    }
+  };
+
   return (
     <div>
       <div className="card">
         <h2>过期管理</h2>
         
-        {/* 筛选选项 */}
-        <div className="tabs">
-          {filterOptions.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              className={`tab ${filter === value ? 'active' : ''}`}
-              onClick={() => setFilter(value)}
-            >
-              <Icon size={16} style={{ marginRight: '8px' }} />
-              {label}
-              {value === 'all' && ` (${stats.all})`}
-              {value === 'expired' && ` (${stats.expired})`}
-              {value === 'expiring-soon' && ` (${stats.expiringSoon})`}
-              {value === 'expiring-month' && ` (${stats.expiringMonth})`}
-            </button>
-          ))}
+        {/* 分类统计卡片 */}
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', 
+          gap: '15px', 
+          marginBottom: '20px' 
+        }}>
+          {filterOptions.map(({ value, label, icon: Icon }) => {
+            const count = value === 'all' ? stats.all : 
+                         value === 'expired' ? stats.expired : 
+                         value === 'expiring-soon' ? stats.expiringSoon : 
+                         stats.expiringMonth;
+            
+            return (
+              <button
+                key={value}
+                onClick={() => setFilter(value)}
+                style={{
+                  padding: '20px 15px',
+                  background: filter === value ? '#8A9A5B' : 'white',
+                  color: filter === value ? 'white' : '#333',
+                  border: '1px solid #e9ecef',
+                  borderRadius: '12px',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  gap: '8px',
+                  transition: 'all 0.2s ease',
+                  boxShadow: filter === value ? '0 4px 12px rgba(138, 154, 91, 0.3)' : '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+              >
+                <Icon size={24} style={{ color: filter === value ? 'white' : '#8A9A5B' }} />
+                <div style={{ fontSize: '14px', fontWeight: '600' }}>{label}</div>
+                <div style={{ fontSize: '18px', fontWeight: 'bold', color: filter === value ? 'white' : '#8A9A5B' }}>
+                  {count}
+                </div>
+              </button>
+            );
+          })}
         </div>
 
         {/* 批量操作工具栏 */}
@@ -277,27 +353,6 @@ const Expiring = () => {
             <h4 style={{ margin: '0 0 10px 0', color: '#856404' }}>批量操作</h4>
             <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
               <button
-                onClick={() => handleBatchDelay(7)}
-                className="btn btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '12px' }}
-              >
-                延期7天
-              </button>
-              <button
-                onClick={() => handleBatchDelay(30)}
-                className="btn btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '12px' }}
-              >
-                延期30天
-              </button>
-              <button
-                onClick={() => handleBatchDelay(90)}
-                className="btn btn-secondary"
-                style={{ padding: '6px 12px', fontSize: '12px' }}
-              >
-                延期90天
-              </button>
-              <button
                 onClick={handleBatchDelete}
                 className="btn btn-danger"
                 style={{ padding: '6px 12px', fontSize: '12px' }}
@@ -312,10 +367,12 @@ const Expiring = () => {
         {/* 物品列表 */}
         <div className="items-list">
           {sortedItems.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
-              <Clock size={48} style={{ marginBottom: '20px', opacity: 0.5 }} />
-              <p>暂无{filter === 'all' ? '' : filter === 'expired' ? '已过期' : filter === 'expiring-soon' ? '即将过期' : '30天内过期'}的物品</p>
-            </div>
+            <EmptyState
+              type="expiring"
+              onActionClick={() => window.location.href = '/items'}
+              actionText="查看全部物品"
+              showIconOnly={false}
+            />
           ) : (
             sortedItems.map((item, index) => {
               const expiryStatus = getExpiryStatus(item.expiryDate);
@@ -347,7 +404,78 @@ const Expiring = () => {
                       </div>
                       <div className="item-details">
                         {item.brand && `品牌: ${item.brand} | `}
-                        数量: {item.quantity} | 
+                        数量: 
+                        {editingQuantity === item.id ? (
+                          <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginLeft: '4px' }}>
+                            <input
+                              type="number"
+                              value={editingValue}
+                              onChange={(e) => setEditingValue(e.target.value)}
+                              onKeyDown={handleQuickEditKeyDown}
+                              onBlur={handleSaveQuickEdit}
+                              style={{
+                                width: '60px',
+                                padding: '2px 6px',
+                                border: '1px solid #007bff',
+                                borderRadius: '4px',
+                                fontSize: '14px'
+                              }}
+                              autoFocus
+                              min="0"
+                              max="999"
+                            />
+                            <button
+                              onClick={handleSaveQuickEdit}
+                              style={{
+                                padding: '2px 6px',
+                                background: '#28a745',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                              }}
+                              title="保存"
+                            >
+                              ✓
+                            </button>
+                            <button
+                              onClick={handleCancelQuickEdit}
+                              style={{
+                                padding: '2px 6px',
+                                background: '#dc3545',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '12px'
+                              }}
+                              title="取消"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        ) : (
+                          <span 
+                            className="quantity-editable"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleQuickEditQuantity(item.id, item.quantity);
+                            }}
+                            style={{ 
+                              cursor: 'pointer', 
+                              padding: '2px 6px', 
+                              background: '#f0f0f0', 
+                              borderRadius: '4px',
+                              marginLeft: '4px',
+                              userSelect: 'none'
+                            }}
+                            title="点击编辑数量"
+                          >
+                            {item.quantity}
+                          </span>
+                        )}
+                        | 
                         <span className={expiryInfo.className}> {expiryInfo.text}</span>
                       </div>
                       {item.notes && (
@@ -366,59 +494,14 @@ const Expiring = () => {
                       {/* 操作按钮 */}
                       <div style={{ marginTop: '10px', display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                         <button
-                          className="btn btn-secondary"
-                          onClick={() => toggleActions(item.id)}
+                          className="btn btn-danger"
+                          onClick={() => handleDelete(item.id)}
                           style={{ padding: '6px 12px', fontSize: '12px' }}
                         >
-                          {showActions[item.id] ? '隐藏' : '操作'}
+                          <Trash2 size={14} style={{ marginRight: '4px' }} />
+                          删除
                         </button>
                       </div>
-                      
-                      {/* 展开的操作选项 */}
-                      {showActions[item.id] && (
-                        <div style={{ 
-                          marginTop: '10px', 
-                          padding: '10px', 
-                          background: '#f8f9fa', 
-                          borderRadius: '6px',
-                          display: 'flex',
-                          gap: '8px',
-                          flexWrap: 'wrap'
-                        }}>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => handleDelay(item, 7)}
-                            style={{ padding: '6px 12px', fontSize: '12px' }}
-                          >
-                            <Calendar size={14} style={{ marginRight: '4px' }} />
-                            延期7天
-                          </button>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => handleDelay(item, 30)}
-                            style={{ padding: '6px 12px', fontSize: '12px' }}
-                          >
-                            <Calendar size={14} style={{ marginRight: '4px' }} />
-                            延期30天
-                          </button>
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => handleDelay(item, 90)}
-                            style={{ padding: '6px 12px', fontSize: '12px' }}
-                          >
-                            <Calendar size={14} style={{ marginRight: '4px' }} />
-                            延期90天
-                          </button>
-                          <button
-                            className="btn btn-danger"
-                            onClick={() => handleDelete(item.id)}
-                            style={{ padding: '6px 12px', fontSize: '12px' }}
-                          >
-                            <Trash2 size={14} style={{ marginRight: '4px' }} />
-                            删除
-                          </button>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>

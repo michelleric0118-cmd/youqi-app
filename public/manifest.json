@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "有期",
+  "name": "有期 - 智能物品过期管理",
+  "description": "智能管理物品过期时间，双重提醒守护，让生活更有条理",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,17 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#7a8a4a",
+  "background_color": "#ffffff",
+  "orientation": "portrait",
+  "categories": ["productivity", "lifestyle", "utilities"],
+  "lang": "zh-CN",
+  "scope": "/",
+  "permissions": [
+    "notifications",
+    "background-sync"
+  ],
+  "background": {
+    "service_worker": "service-worker.js"
+  }
 }

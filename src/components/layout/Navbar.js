@@ -25,8 +25,10 @@ const Navbar = () => {
             to={path}
             className={`navbar-tab ${location.pathname === path ? 'active' : ''}`}
           >
-            <Icon size={20} />
-            <span>{label}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
+              <Icon size={20} />
+              <span>{label}</span>
+            </div>
           </Link>
         ))}
       </div>

@@ -11,6 +11,7 @@ import toast from 'react-hot-toast';
 export const useLeanCloudItems = () => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [leanCloudConnected, setLeanCloudConnected] = useState(false);
   const [syncStatus, setSyncStatus] = useState('idle'); // idle, syncing, error
 
@@ -39,14 +40,17 @@ export const useLeanCloudItems = () => {
       
       console.log('同步完成');
       setSyncStatus('idle');
+      setError(null); // 清除错误状态
     } catch (error) {
       console.error('同步到LeanCloud失败:', error);
+      setError('数据同步失败，请检查网络连接');
       // 检查是否实际同步成功
       try {
         const leanCloudItems = await getItemsFromLeanCloud();
         if (leanCloudItems.length > 0) {
           console.log('检测到LeanCloud中已有数据，同步实际成功');
           setSyncStatus('idle');
+          setError(null); // 清除错误状态
         } else {
           setSyncStatus('error');
         }
@@ -61,6 +65,7 @@ export const useLeanCloudItems = () => {
     const initializeData = async () => {
       try {
         setLoading(true);
+        setError(null); // 重置错误状态
         
         const savedItems = localStorage.getItem('youqi-items');
         const localItems = savedItems ? JSON.parse(savedItems) : [];
@@ -83,10 +88,12 @@ export const useLeanCloudItems = () => {
           console.error('LeanCloud连接失败，使用本地数据:', error);
           setLeanCloudConnected(false);
           setSyncStatus('error'); // 连接失败，设置同步状态为错误
+          setError('无法连接到云端服务，使用本地数据');
           setItems(localItems);
         }
       } catch (error) {
         console.error('数据初始化失败:', error);
+        setError('数据加载失败，请刷新页面重试');
         setItems([]);
         setSyncStatus('error');
       } finally {
@@ -120,32 +127,58 @@ export const useLeanCloudItems = () => {
 
   const deleteItem = async (itemId) => {
     try {
+      // 先从本地状态和localStorage中删除
       const updatedItems = items.filter(item => item.id !== itemId);
       setItems(updatedItems);
       localStorage.setItem('youqi-items', JSON.stringify(updatedItems));
+      
+      // 尝试从LeanCloud删除（如果连接可用）
       if (leanCloudConnected) {
-        await deleteItemFromLeanCloud(itemId);
+        try {
+          await deleteItemFromLeanCloud(itemId);
+          console.log('LeanCloud删除成功');
+        } catch (leanCloudError) {
+          console.error('LeanCloud删除失败，但本地删除成功:', leanCloudError);
+          // LeanCloud删除失败不影响本地删除，只记录日志
+          // 不抛出错误，因为本地删除已经成功
+        }
       }
+      
       toast.success('物品已删除');
     } catch (error) {
+      console.error('删除物品失败:', error);
       toast.error('删除物品失败，请重试');
+      throw error; // 重新抛出错误，让调用者知道删除失败
     }
   };
 
   const updateItem = async (itemId, updateData) => {
     try {
+      // 先更新本地状态和localStorage
       const updatedItems = items.map(item => 
         item.id === itemId ? { ...item, ...updateData, updatedAt: new Date().toISOString() } : item
       );
       setItems(updatedItems);
       localStorage.setItem('youqi-items', JSON.stringify(updatedItems));
+      
+      // 尝试同步到LeanCloud（如果连接可用）
       if (leanCloudConnected) {
-        const { updatedAt, ...leanCloudUpdateData } = updateData;
-        await updateItemInLeanCloud(itemId, leanCloudUpdateData);
+        try {
+          const { updatedAt, ...leanCloudUpdateData } = updateData;
+          await updateItemInLeanCloud(itemId, leanCloudUpdateData);
+          console.log('LeanCloud更新成功');
+        } catch (leanCloudError) {
+          console.error('LeanCloud更新失败，但本地更新成功:', leanCloudError);
+          // LeanCloud更新失败不影响本地更新，只记录日志
+          // 不抛出错误，因为本地更新已经成功
+        }
       }
+      
       toast.success('物品已更新');
     } catch (error) {
+      console.error('更新物品失败:', error);
       toast.error('更新物品失败，请重试');
+      throw error; // 重新抛出错误，让调用者知道更新失败
     }
   };
 
@@ -263,6 +296,7 @@ export const useLeanCloudItems = () => {
   return {
     items,
     loading,
+    error,
     leanCloudConnected,
     syncStatus,
     addItem,

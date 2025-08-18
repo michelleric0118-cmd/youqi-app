@@ -3,155 +3,271 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>离线 - 有期</title>
+    <title>有期 - 离线模式</title>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            background-color: #f9fafb;
-            color: #1f2937;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
+            color: #333;
         }
 
-        .container {
+        .offline-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
             text-align: center;
-            padding: 2rem;
-            max-width: 600px;
-            margin: 0 auto;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            animation: slideUp 0.6s ease-out;
         }
 
-        .logo {
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .offline-icon {
             width: 80px;
             height: 80px;
-            margin-bottom: 2rem;
-        }
-
-        h1 {
-            font-size: 1.875rem;
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: #111827;
-        }
-
-        p {
-            font-size: 1rem;
-            line-height: 1.5;
-            color: #4b5563;
-            margin-bottom: 2rem;
-        }
-
-        .button {
-            display: inline-flex;
+            margin: 0 auto 20px;
+            background: #f8f9fa;
+            border-radius: 50%;
+            display: flex;
             align-items: center;
-            padding: 0.75rem 1.5rem;
-            background-color: #2563eb;
-            color: white;
-            border-radius: 0.375rem;
-            font-weight: 500;
-            text-decoration: none;
-            transition: background-color 0.2s;
+            justify-content: center;
+            font-size: 40px;
+            color: #6c757d;
         }
 
-        .button:hover {
-            background-color: #1d4ed8;
+        .offline-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #495057;
         }
 
-        .icon {
-            width: 1.25rem;
-            height: 1.25rem;
-            margin-right: 0.5rem;
+        .offline-message {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #6c757d;
+            margin-bottom: 30px;
         }
 
-        .features {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-top: 3rem;
+        .offline-features {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
             text-align: left;
         }
 
-        .feature {
-            padding: 1.5rem;
-            background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        .offline-features h3 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #495057;
         }
 
-        .feature h3 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-            color: #111827;
+        .feature-list {
+            list-style: none;
         }
 
-        .feature p {
-            font-size: 0.875rem;
-            margin-bottom: 0;
+        .feature-list li {
+            padding: 8px 0;
+            color: #6c757d;
+            position: relative;
+            padding-left: 25px;
         }
 
-        @media (max-width: 640px) {
-            .container {
-                padding: 1.5rem;
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #28a745;
+            font-weight: bold;
+        }
+
+        .retry-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-right: 15px;
+        }
+
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .home-button {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .home-button:hover {
+            background: #5a6268;
+            transform: translateY(-2px);
+        }
+
+        .network-status {
+            margin-top: 20px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #dc3545;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .status-indicator.online {
+            background: #28a745;
+            animation: none;
+        }
+
+        @media (max-width: 480px) {
+            .offline-container {
+                padding: 30px 20px;
+                margin: 20px;
             }
 
-            h1 {
-                font-size: 1.5rem;
+            .offline-title {
+                font-size: 20px;
             }
 
-            .features {
-                grid-template-columns: 1fr;
+            .retry-button, .home-button {
+                display: block;
+                width: 100%;
+                margin: 10px 0;
             }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <img src="/logo192.png" alt="有期 Logo" class="logo">
-        <h1>您当前处于离线状态</h1>
-        <p>
-            看起来您的网络连接出现了问题。不过别担心，您仍然可以访问已缓存的内容，
-            我们会在网络恢复后自动同步您的数据。
+    <div class="offline-container">
+        <div class="offline-icon">
+            📱
+        </div>
+        
+        <h1 class="offline-title">您当前处于离线状态</h1>
+        
+        <p class="offline-message">
+            网络连接暂时不可用，但您仍然可以使用已缓存的功能
         </p>
-        <a href="/" class="button">
-            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            重新加载
-        </a>
 
-        <div class="features">
-            <div class="feature">
-                <h3>离线功能</h3>
-                <p>即使在离线状态下，您仍然可以查看已缓存的物品信息和执行基本操作。</p>
-            </div>
-            <div class="feature">
-                <h3>自动同步</h3>
-                <p>网络恢复后，我们会自动同步您在离线期间所做的更改。</p>
-            </div>
-            <div class="feature">
-                <h3>数据安全</h3>
-                <p>您的所有数据都安全地存储在本地，不会因为网络问题而丢失。</p>
-            </div>
+        <div class="offline-features">
+            <h3>离线可用功能：</h3>
+            <ul class="feature-list">
+                <li>查看已缓存的物品列表</li>
+                <li>浏览分类管理</li>
+                <li>查看设置页面</li>
+                <li>使用本地通知</li>
+            </ul>
+        </div>
+
+        <div>
+            <button class="retry-button" onclick="retryConnection()">
+                重试连接
+            </button>
+            <button class="home-button" onclick="goHome()">
+                返回首页
+            </button>
+        </div>
+
+        <div class="network-status">
+            <span class="status-indicator" id="statusIndicator"></span>
+            <span id="statusText">检测网络状态...</span>
         </div>
     </div>
 
     <script>
-        // 检测网络状态变化
-        window.addEventListener('online', () => {
-            window.location.reload();
-        });
+        // 检测网络状态
+        function updateNetworkStatus() {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const statusText = document.getElementById('statusText');
+            
+            if (navigator.onLine) {
+                statusIndicator.classList.add('online');
+                statusText.textContent = '网络已连接，正在重新加载...';
+                
+                // 延迟重定向到首页
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 2000);
+            } else {
+                statusIndicator.classList.remove('online');
+                statusText.textContent = '网络未连接';
+            }
+        }
 
-        // 刷新按钮功能
-        document.querySelector('.button').addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.reload();
-        });
+        // 重试连接
+        function retryConnection() {
+            const statusText = document.getElementById('statusText');
+            statusText.textContent = '正在检测网络状态...';
+            
+            // 模拟网络检测
+            setTimeout(() => {
+                updateNetworkStatus();
+            }, 1000);
+        }
+
+        // 返回首页
+        function goHome() {
+            window.location.href = '/';
+        }
+
+        // 监听网络状态变化
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+
+        // 页面加载时检测网络状态
+        document.addEventListener('DOMContentLoaded', updateNetworkStatus);
+
+        // 定期检测网络状态
+        setInterval(updateNetworkStatus, 5000);
     </script>
 </body>
 </html>

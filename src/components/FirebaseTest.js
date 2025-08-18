@@ -62,7 +62,8 @@ const FirebaseTest = () => {
 
   // 删除所有测试物品
   const clearAllItems = async () => {
-    if (!window.confirm('确定要删除所有Firebase中的物品吗？')) {
+    // 添加确认对话框
+    if (!window.confirm('⚠️ 警告：此操作将清空Firebase中的所有测试数据！\n\n此操作不可撤销，确定要继续吗？')) {
       return;
     }
     

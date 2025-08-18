@@ -1,0 +1,90 @@
+/* 状态指示器测试组件样式 */
+.status-indicator-test {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.status-indicator-test h2 {
+  text-align: center;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.test-controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.control-group {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  border: 1px solid #e9ecef;
+}
+
+.control-group h3 {
+  margin: 0 0 16px 0;
+  color: #333;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.control-btn {
+  padding: 10px 16px;
+  border: 1px solid #dee2e6;
+  border-radius: 6px;
+  background: white;
+  color: #333;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.control-btn:hover:not(:disabled) {
+  background: #e9ecef;
+}
+
+.control-btn.active {
+  background: #8A9A5B;
+  color: white;
+}
+
+.status-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 30px;
+}
+
+.status-item {
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.status-label {
+  font-weight: 500;
+  color: #666;
+}
+
+.status-value {
+  font-weight: 600;
+}
+
+.status-value.active {
+  color: #10b981;
+}
+
+.status-value.inactive {
+  color: #ef4444;
+} 

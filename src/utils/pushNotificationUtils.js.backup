@@ -1,0 +1,499 @@
+// 推送通知管理工具
+// 支持PWA推送订阅、权限管理和通知发送
+
+// VAPID公钥（示例，实际使用时需要替换为真实的公钥）
+const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa1HI0FZfY8LFxVz2sJ0dKj2BaGjygH86kJ8GXiGPwfVzcy7VTNm8mDGOcNoBY';
+
+// 推送订阅状态
+let pushSubscription = null;
+let serviceWorkerRegistration = null;
+
+// 事件监听器
+const eventListeners = {
+  permissionChanged: [],
+  subscriptionChanged: [],
+  error: []
+};
+
+/**
+ * 初始化推送通知系统
+ */
+export const initializePushNotifications = async () => {
+  try {
+    // 检查浏览器支持
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      console.log('浏览器不支持推送通知');
+      return { supported: false, reason: '浏览器不支持推送通知' };
+    }
+
+    // 注册Service Worker
+    const registration = await navigator.serviceWorker.register('/service-worker.js');
+    serviceWorkerRegistration = registration;
+    
+    console.log('Service Worker注册成功:', registration);
+
+    // 检查推送权限
+    const permission = await checkNotificationPermission();
+    
+    if (permission === 'granted') {
+      // 已有权限，尝试订阅推送
+      await subscribeToPush();
+    }
+
+    // 监听权限变化
+    if ('permissions' in navigator) {
+      navigator.permissions.query({ name: 'notifications' }).then((permissionStatus) => {
+        permissionStatus.onchange = () => {
+          const newPermission = permissionStatus.state;
+          console.log('通知权限状态变化:', newPermission);
+          notifyListeners('permissionChanged', newPermission);
+        };
+      });
+    }
+
+    return { 
+      supported: true, 
+      permission, 
+      registration,
+      subscription: pushSubscription 
+    };
+
+  } catch (error) {
+    console.error('初始化推送通知失败:', error);
+    notifyListeners('error', error);
+    return { supported: false, reason: error.message };
+  }
+};
+
+/**
+ * 检查通知权限
+ */
+export const checkNotificationPermission = async () => {
+  if (!('Notification' in window)) {
+    return 'unsupported';
+  }
+
+  // 检查是否已有权限
+  if (Notification.permission === 'granted') {
+    return 'granted';
+  }
+
+  if (Notification.permission === 'denied') {
+    return 'denied';
+  }
+
+  return 'default';
+};
+
+/**
+ * 请求通知权限
+ */
+export const requestNotificationPermission = async () => {
+  try {
+    const permission = await Notification.requestPermission();
+    console.log('通知权限状态:', permission);
+    
+    if (permission === 'granted') {
+      // 权限获取成功，订阅推送
+      await subscribeToPush();
+      notifyListeners('permissionChanged', permission);
+    }
+    
+    return permission;
+  } catch (error) {
+    console.error('请求通知权限失败:', error);
+    notifyListeners('error', error);
+    throw error;
+  }
+};
+
+/**
+ * 订阅推送通知
+ */
+export const subscribeToPush = async () => {
+  try {
+    if (!serviceWorkerRegistration) {
+      throw new Error('Service Worker未注册');
+    }
+
+    // 检查是否已有订阅
+    const existingSubscription = await serviceWorkerRegistration.pushManager.getSubscription();
+    
+    if (existingSubscription) {
+      pushSubscription = existingSubscription;
+      console.log('已有推送订阅:', existingSubscription);
+      notifyListeners('subscriptionChanged', existingSubscription);
+      return existingSubscription;
+    }
+
+    // 创建新的推送订阅
+    const subscription = await serviceWorkerRegistration.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+    });
+
+    pushSubscription = subscription;
+    console.log('推送订阅创建成功:', subscription);
+
+    // 保存订阅信息到本地存储
+    saveSubscriptionToStorage(subscription);
+
+    // 发送订阅信息到后端（如果有后端服务）
+    await sendSubscriptionToServer(subscription);
+
+    // 通知订阅变化
+    notifyListeners('subscriptionChanged', subscription);
+
+    return subscription;
+
+  } catch (error) {
+    console.error('订阅推送失败:', error);
+    notifyListeners('error', error);
+    throw error;
+  }
+};
+
+/**
+ * 取消推送订阅
+ */
+export const unsubscribeFromPush = async () => {
+  try {
+    if (!pushSubscription) {
+      console.log('没有活跃的推送订阅');
+      return true;
+    }
+
+    // 取消订阅
+    await pushSubscription.unsubscribe();
+    
+    // 清除本地订阅
+    pushSubscription = null;
+    removeSubscriptionFromStorage();
+
+    console.log('推送订阅已取消');
+    
+    // 通知订阅变化
+    notifyListeners('subscriptionChanged', null);
+
+    return true;
+
+  } catch (error) {
+    console.error('取消推送订阅失败:', error);
+    notifyListeners('error', error);
+    throw error;
+  }
+};
+
+/**
+ * 发送本地通知
+ */
+export const sendLocalNotification = (title, options = {}) => {
+  try {
+    if (!('Notification' in window)) {
+      console.log('浏览器不支持通知');
+      return false;
+    }
+
+    if (Notification.permission !== 'granted') {
+      console.log('没有通知权限');
+      return false;
+    }
+
+    const defaultOptions = {
+      icon: '/logo192.png',
+      badge: '/logo192.png',
+      tag: 'youqi-notification',
+      requireInteraction: false,
+      data: {
+        timestamp: Date.now(),
+        source: 'local'
+      }
+    };
+
+    const notification = new Notification(title, { ...defaultOptions, ...options });
+    
+    // 处理通知点击事件
+    notification.onclick = () => {
+      window.focus();
+      notification.close();
+      
+      // 如果有URL，导航到指定页面
+      if (options.data && options.data.url) {
+        window.location.href = options.data.url;
+      }
+    };
+
+    return notification;
+
+  } catch (error) {
+    console.error('发送本地通知失败:', error);
+    notifyListeners('error', error);
+    return false;
+  }
+};
+
+/**
+ * 发送过期提醒通知
+ */
+export const sendExpiryReminder = (item, reminderType = 'first') => {
+  const title = reminderType === 'first' ? '有期提醒' : '最后提醒';
+  
+  let body = '';
+  let actions = [];
+  
+  if (reminderType === 'first') {
+    // 第一次提醒
+    body = `您的「${item.name}」即将在${item.daysUntilExpiry}天后过期，请记得使用哦。`;
+    actions = [
+      { action: 'view', title: '查看详情' },
+      { action: 'dismiss', title: '稍后提醒' }
+    ];
+  } else {
+    // 第二次提醒
+    body = `您的「${item.name}」将在${item.daysUntilExpiry === 0 ? '今天' : '明天'}过期！`;
+    actions = [
+      { action: 'view', title: '立即处理' },
+      { action: 'dismiss', title: '我知道了' }
+    ];
+  }
+
+  return sendLocalNotification(title, {
+    body,
+    icon: '/logo192.png',
+    badge: '/logo192.png',
+    tag: `expiry-${item.id}-${reminderType}`,
+    requireInteraction: true,
+    data: {
+      url: `/expiring`,
+      itemId: item.id,
+      reminderType,
+      timestamp: Date.now()
+    },
+    actions
+  });
+};
+
+/**
+ * 检查并发送过期提醒
+ */
+export const checkAndSendExpiryReminders = async () => {
+  try {
+    // 从本地存储获取物品数据
+    const items = JSON.parse(localStorage.getItem('items') || '[]');
+    const now = new Date();
+    
+    const expiringItems = items.filter(item => {
+      if (!item.expiryDate) return false;
+      
+      const expiryDate = new Date(item.expiryDate);
+      const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+      
+      // 检查是否需要发送提醒
+      return daysUntilExpiry >= 0 && daysUntilExpiry <= 30;
+    });
+
+    console.log('检查到过期物品:', expiringItems.length);
+
+    // 发送提醒
+    for (const item of expiringItems) {
+      const expiryDate = new Date(item.expiryDate);
+      const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
+      
+      if (daysUntilExpiry === 0) {
+        // 今天过期 - 发送最终提醒
+        sendExpiryReminder(item, 'final');
+      } else if (daysUntilExpiry <= 7) {
+        // 7天内过期 - 发送第一次提醒
+        sendExpiryReminder(item, 'first');
+      }
+    }
+
+    return expiringItems.length;
+
+  } catch (error) {
+    console.error('检查过期提醒失败:', error);
+    notifyListeners('error', error);
+    return 0;
+  }
+};
+
+/**
+ * 获取推送订阅状态
+ */
+export const getPushSubscriptionStatus = () => {
+  return {
+    supported: 'serviceWorker' in navigator && 'PushManager' in window,
+    permission: Notification.permission,
+    subscription: pushSubscription,
+    registration: serviceWorkerRegistration
+  };
+};
+
+/**
+ * 添加事件监听器
+ */
+export const addEventListener = (event, callback) => {
+  if (eventListeners[event]) {
+    eventListeners[event].push(callback);
+  }
+};
+
+/**
+ * 移除事件监听器
+ */
+export const removeEventListener = (event, callback) => {
+  if (eventListeners[event]) {
+    const index = eventListeners[event].indexOf(callback);
+    if (index > -1) {
+      eventListeners[event].splice(index, 1);
+    }
+  }
+};
+
+/**
+ * 通知事件监听器
+ */
+function notifyListeners(event, data) {
+  if (eventListeners[event]) {
+    eventListeners[event].forEach(callback => {
+      try {
+        callback(data);
+      } catch (error) {
+        console.error(`事件监听器执行失败 (${event}):`, error);
+      }
+    });
+  }
+}
+
+/**
+ * 添加事件监听器
+ */
+export const addEventListener = (event, callback) => {
+  if (eventListeners[event]) {
+    eventListeners[event].push(callback);
+  }
+};
+
+/**
+ * 移除事件监听器
+ */
+export const removeEventListener = (event, callback) => {
+  if (eventListeners[event]) {
+    const index = eventListeners[event].indexOf(callback);
+    if (index > -1) {
+      eventListeners[event].splice(index, 1);
+    }
+  }
+};
+
+/**
+ * 通知事件监听器
+ */
+function notifyListeners(event, data) {
+  if (eventListeners[event]) {
+    eventListeners[event].forEach(callback => {
+      try {
+        callback(data);
+      } catch (error) {
+        console.error(`事件监听器执行失败 (${event}):`, error);
+      }
+    });
+  }
+}
+
+/**
+ * 将VAPID公钥从Base64转换为Uint8Array
+ */
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+/**
+ * 保存订阅信息到本地存储
+ */
+function saveSubscriptionToStorage(subscription) {
+  try {
+    const subscriptionData = {
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))),
+        auth: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))))
+      },
+      timestamp: Date.now()
+    };
+    
+    localStorage.setItem('pushSubscription', JSON.stringify(subscriptionData));
+    console.log('推送订阅已保存到本地存储');
+  } catch (error) {
+    console.error('保存推送订阅到本地存储失败:', error);
+  }
+}
+
+/**
+ * 从本地存储移除订阅信息
+ */
+function removeSubscriptionFromStorage() {
+  try {
+    localStorage.removeItem('pushSubscription');
+    console.log('推送订阅已从本地存储移除');
+  } catch (error) {
+    console.error('从本地存储移除推送订阅失败:', error);
+  }
+}
+
+/**
+ * 发送订阅信息到后端服务器
+ */
+async function sendSubscriptionToServer(subscription) {
+  try {
+    // 这里可以发送订阅信息到后端
+    // 例如：保存到LeanCloud或Cloudflare Workers
+    
+    const subscriptionData = {
+      endpoint: subscription.endpoint,
+      keys: {
+        p256dh: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('p256dh')))),
+        auth: btoa(String.fromCharCode.apply(null, new Uint8Array(subscription.getKey('auth'))))
+      },
+      timestamp: Date.now()
+    };
+
+    console.log('推送订阅信息:', subscriptionData);
+    
+    // 如果有后端API，可以在这里发送
+    // await fetch('/api/push/subscribe', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify(subscriptionData)
+    // });
+
+  } catch (error) {
+    console.error('发送订阅信息到后端失败:', error);
+  }
+}
+
+// 导出所有函数
+export default {
+  initializePushNotifications,
+  checkNotificationPermission,
+  requestNotificationPermission,
+  subscribeToPush,
+  unsubscribeFromPush,
+  sendLocalNotification,
+  sendExpiryReminder,
+  checkAndSendExpiryReminders,
+  getPushSubscriptionStatus,
+  addEventListener,
+  removeEventListener
+}; 

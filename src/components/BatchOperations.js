@@ -130,14 +130,14 @@ const BatchOperations = ({
             <div className="confirm-content">
               <p>
                 {operation === 'delete' 
-                  ? `确定要删除选中的 ${selectedItems.length} 个物品吗？此操作不可撤销。`
-                  : `确定要编辑选中的 ${selectedItems.length} 个物品吗？`
+                  ? `删除选中的 ${selectedItems.length} 个物品？`
+                  : `编辑选中的 ${selectedItems.length} 个物品？`
                 }
               </p>
               
               {operation === 'delete' && (
                 <div className="delete-warning">
-                  <p>⚠️ 删除后将无法恢复，请谨慎操作</p>
+                  <p>⚠️ 此操作无法撤销</p>
                 </div>
               )}
             </div>

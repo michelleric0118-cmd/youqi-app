@@ -54,6 +54,11 @@ const LeanCloudTest = () => {
   };
 
   const clearAllItems = async () => {
+    // 添加确认对话框
+    if (!window.confirm('⚠️ 警告：此操作将清空LeanCloud中的所有数据！\n\n此操作不可撤销，确定要继续吗？')) {
+      return;
+    }
+    
     setLoading(true);
     try {
       for (const item of testItems) {

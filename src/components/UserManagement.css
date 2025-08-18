@@ -335,3 +335,84 @@
     align-self: flex-end;
   }
 } 
+
+/* 权限不足提示样式 */
+.permission-denied {
+  background: white;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+.permission-denied .modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-bottom: 1px solid #eee;
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.permission-denied .modal-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #92400e;
+}
+
+.permission-denied .close-btn {
+  background: none;
+  border: none;
+  color: #92400e;
+  cursor: pointer;
+  font-size: 24px;
+  padding: 0;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+}
+
+.permission-denied .close-btn:hover {
+  background: rgba(146, 64, 14, 0.1);
+}
+
+.permission-denied .modal-body {
+  padding: 40px 20px;
+  text-align: center;
+}
+
+.permission-denied .modal-body h4 {
+  margin: 0 0 16px 0;
+  color: #374151;
+  font-size: 1.1rem;
+}
+
+.permission-denied .modal-body p {
+  margin: 0 0 24px 0;
+  color: #6b7280;
+  line-height: 1.6;
+  font-size: 0.95rem;
+}
+
+.permission-denied .modal-body .btn {
+  background: var(--sage-green);
+  color: white;
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.permission-denied .modal-body .btn:hover {
+  background: #7a8a4a;
+  transform: translateY(-1px);
+} 

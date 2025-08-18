@@ -59,11 +59,7 @@ const Home = () => {
             {isElderMode ? '已开启' : '开启'}
           </button>
         </div>
-        {isElderMode && (
-          <p style={{ margin: '10px 0 0 0', fontSize: '14px', color: '#666' }}>
-            💡 老年人模式已开启，字体和按钮已放大，更适合老年人使用
-          </p>
-        )}
+        {/* 冗余提示已删除 - 按钮状态已经足够清晰 */}
       </div>
 
       {/* 核心统计指标（突出展示） */}

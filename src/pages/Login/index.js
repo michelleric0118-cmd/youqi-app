@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { User, Lock, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { User, Lock, Mail, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { login, registerWithInvite } from '../../services/authService';
+import toast from 'react-hot-toast';
 
 const Login = ({ onLogin }) => {
   const navigate = useNavigate();
@@ -70,7 +71,7 @@ const Login = ({ onLogin }) => {
       if (isLogin) {
         // 登录
         await login({ username: formData.username, password: formData.password });
-        alert('登录成功！');
+        toast.success('登录成功！');
         if (onLogin) onLogin();
         navigate('/');
       } else {
@@ -82,7 +83,7 @@ const Login = ({ onLogin }) => {
           password: formData.password,
           inviteCode
         });
-        alert('注册成功！已自动登录');
+        toast.success('注册成功！已自动登录');
         if (onLogin) onLogin();
         navigate('/');
       }
@@ -92,7 +93,7 @@ const Login = ({ onLogin }) => {
         : err.code === 'INVITE_INVALID'
           ? '邀请码无效或已被使用'
           : err.message || '操作失败，请重试';
-      alert(msg);
+      toast.error(msg);
     }
   };
 
@@ -274,27 +275,7 @@ const Login = ({ onLogin }) => {
           </button>
         </div>
 
-        {/* 跳过登录（开发环境） */}
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
-          <button
-            onClick={() => {
-              localStorage.setItem('user-token', 'demo-token');
-              if (onLogin) {
-                onLogin();
-              }
-              navigate('/');
-            }}
-            style={{
-              background: 'none',
-              border: 'none',
-              color: '#999',
-              cursor: 'pointer',
-              fontSize: '12px'
-            }}
-          >
-            跳过登录（开发环境）
-          </button>
-        </div>
+
       </div>
     </div>
   );

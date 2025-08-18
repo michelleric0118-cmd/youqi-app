@@ -61,11 +61,31 @@ export const DEFAULT_CATEGORIES = [
 
 // 组合默认分类与用户自定义分类
 export const buildCategories = (custom = []) => {
+  // 确保custom是数组
+  const customArray = Array.isArray(custom) ? custom : [];
+  
+  // 构建分类映射，避免重复
   const map = new Map();
-  [...DEFAULT_CATEGORIES, ...custom].forEach(c => {
-    if (!map.has(c.value)) map.set(c.value, c);
+  
+  // 添加默认分类
+  DEFAULT_CATEGORIES.forEach(c => {
+    map.set(c.value, c);
   });
-  return Array.from(map.values());
+  
+  // 添加用户自定义分类（如果有label字段，使用label作为value）
+  customArray.forEach(c => {
+    if (c.label && !map.has(c.label)) {
+      map.set(c.label, { value: c.label, label: c.label });
+    } else if (c.value && !map.has(c.value)) {
+      map.set(c.value, c);
+    }
+  });
+  
+  // 转换为数组并添加"自定义"选项
+  const categories = Array.from(map.values());
+  categories.push({ value: 'custom', label: '自定义' });
+  
+  return categories;
 };
 
 // 生成测试数据

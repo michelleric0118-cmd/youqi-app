@@ -1,0 +1,292 @@
+/* PWA功能测试样式 */
+.pwa-feature-test {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.pwa-feature-test-header {
+  text-align: center;
+  margin-bottom: 30px;
+}
+
+.pwa-feature-test-header h2 {
+  color: #333;
+  margin-bottom: 10px;
+}
+
+.pwa-feature-test-header p {
+  color: #666;
+  font-size: 16px;
+}
+
+/* 状态概览 */
+.pwa-status-overview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  margin-bottom: 30px;
+}
+
+.pwa-status-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #e9ecef;
+}
+
+.pwa-status-icon {
+  margin-right: 12px;
+  color: #8A9A5B;
+}
+
+.pwa-status-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.pwa-status-label {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 4px;
+}
+
+.pwa-status-value {
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.pwa-status-value.online {
+  color: #28a745;
+}
+
+.pwa-status-value.offline {
+  color: #dc3545;
+}
+
+.pwa-status-value.granted {
+  color: #28a745;
+}
+
+.pwa-status-value.denied {
+  color: #dc3545;
+}
+
+.pwa-status-value.standalone {
+  color: #17a2b8;
+}
+
+.pwa-status-value.browser {
+  color: #6c757d;
+}
+
+/* 测试操作 */
+.pwa-test-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 30px;
+  justify-content: center;
+}
+
+.pwa-test-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pwa-test-btn.primary {
+  background: #8A9A5B;
+  color: white;
+}
+
+.pwa-test-btn.primary:hover {
+  background: #7a8a4b;
+  transform: translateY(-1px);
+}
+
+.pwa-test-btn {
+  background: #f8f9fa;
+  color: #333;
+  border: 1px solid #dee2e6;
+}
+
+.pwa-test-btn:hover {
+  background: #e9ecef;
+  transform: translateY(-1px);
+}
+
+.pwa-test-btn.danger {
+  background: #dc3545;
+  color: white;
+}
+
+.pwa-test-btn.danger:hover {
+  background: #c82333;
+}
+
+/* 测试结果 */
+.pwa-test-results {
+  margin-bottom: 30px;
+}
+
+.pwa-test-results h3 {
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.pwa-test-result {
+  padding: 16px;
+  border-radius: 8px;
+  margin-bottom: 16px;
+  border-left: 4px solid;
+}
+
+.pwa-test-result.success {
+  background: #d4edda;
+  border-left-color: #28a745;
+}
+
+.pwa-test-result.error {
+  background: #f8d7da;
+  border-left-color: #dc3545;
+}
+
+.pwa-test-result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.pwa-test-result-title {
+  font-weight: 500;
+  color: #333;
+}
+
+.pwa-test-result-status {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.pwa-test-result-status.success {
+  color: #28a745;
+}
+
+.pwa-test-result-status.error {
+  color: #dc3545;
+}
+
+.pwa-test-result-details {
+  font-size: 14px;
+  color: #666;
+}
+
+/* 使用说明 */
+.pwa-usage-guide {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.pwa-usage-guide h3 {
+  color: #333;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.pwa-usage-steps {
+  display: grid;
+  gap: 20px;
+}
+
+.pwa-usage-step {
+  display: flex;
+  align-items: flex-start;
+}
+
+.pwa-usage-step-number {
+  width: 32px;
+  height: 32px;
+  background: #8A9A5B;
+  color: white;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  margin-right: 16px;
+  flex-shrink: 0;
+}
+
+.pwa-usage-step-content h4 {
+  color: #333;
+  margin: 0 0 8px 0;
+  font-size: 16px;
+}
+
+.pwa-usage-step-content p {
+  color: #666;
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .pwa-status-overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .pwa-test-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .pwa-test-btn {
+    justify-content: center;
+  }
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .pwa-feature-test {
+    background: #1a1a1a;
+    color: #fff;
+  }
+  
+  .pwa-status-item {
+    background: #2a2a2a;
+    border-color: #444;
+  }
+  
+  .pwa-test-btn {
+    background: #2a2a2a;
+    color: #fff;
+    border-color: #444;
+  }
+  
+  .pwa-test-btn:hover {
+    background: #3a3a3a;
+  }
+  
+  .pwa-usage-guide {
+    background: #2a2a2a;
+  }
+  
+  .pwa-test-result.success {
+    background: #1a2d1a;
+  }
+  
+  .pwa-test-result.error {
+    background: #2d1a1a;
+  }
+} 

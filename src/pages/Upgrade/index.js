@@ -39,7 +39,7 @@ const UpgradePage = () => {
   return (
     <div style={{ maxWidth: 960, margin: '0 auto', padding: 24 }}>
       <h2 style={{ marginBottom: 12 }}>升级套餐</h2>
-      <p style={{ color: '#555' }}>内测版每用户每月包含 40 次 OCR 识别。升级可获得更多额度和功能。</p>
+      <p style={{ color: '#555' }}>内测版OCR识别无次数限制，完全免费使用。升级可获得更多高级功能。</p>
 
       <div style={{ display: 'flex', gap: 16, marginTop: 16, flexWrap: 'wrap' }}>
         <PlanCard

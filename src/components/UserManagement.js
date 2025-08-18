@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Users, UserPlus, UserX } from 'lucide-react';
+import { Users, Copy, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { AV, initLeanCloud } from '../leancloud/config';
 import { listInvites, createInvite, createInvitesToFill, exportInvitesCSV, exportInviteLogsCSV, invalidateInvite, deleteInvite } from '../services/inviteService';
 import './UserManagement.css';
+import toast from 'react-hot-toast';
 
 const UserManagement = ({ onClose }) => {
   const [users, setUsers] = useState([]);
@@ -12,7 +13,14 @@ const UserManagement = ({ onClose }) => {
   const [loading, setLoading] = useState(false);
   const [invites, setInvites] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
-  const isAdmin = (currentUser?.get && currentUser.get('role')) === 'admin';
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // 权限检查函数
+  const checkAdminPermission = (user) => {
+    if (!user) return false;
+    const role = user.get('role');
+    return role === 'admin';
+  };
 
   const refreshInvites = async () => {
     try {
@@ -29,7 +37,10 @@ const UserManagement = ({ onClose }) => {
     const fetchUsers = async () => {
       try {
         const me = AV.User.current();
-        if (me) setCurrentUser(me);
+        if (me) {
+          setCurrentUser(me);
+          setIsAdmin(checkAdminPermission(me));
+        }
         const q = new AV.Query('_User');
         q.ascending('createdAt');
         q.limit(1000);
@@ -53,6 +64,80 @@ const UserManagement = ({ onClose }) => {
     refreshInvites();
   }, []);
 
+  // 如果不是管理员，显示权限不足提示
+  if (!isAdmin) {
+    return (
+      <div className="modal-overlay">
+        <div className="modal-content permission-denied">
+          <div className="modal-header">
+            <h3>权限不足</h3>
+            <button 
+              className="close-btn"
+              onClick={onClose}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                color: '#6b7280',
+                padding: '4px',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '32px',
+                height: '32px'
+              }}
+            >
+              ×
+            </button>
+          </div>
+          
+          <div className="modal-body" style={{ textAlign: 'center', padding: '40px 20px' }}>
+            <div style={{ 
+              width: '80px', 
+              height: '80px', 
+              background: '#fef3c7', 
+              borderRadius: '50%', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              margin: '0 auto 20px auto' 
+            }}>
+              <span style={{ fontSize: '40px' }}>🔒</span>
+            </div>
+            
+            <h4 style={{ margin: '0 0 16px 0', color: '#374151' }}>
+              此功能仅对管理员开放
+            </h4>
+            
+            <p style={{ margin: '0 0 24px 0', color: '#6b7280', lineHeight: '1.6' }}>
+              用户管理功能包含系统级操作，需要管理员权限才能访问。
+              <br />
+              如果您需要管理用户或邀请码，请联系系统管理员。
+            </p>
+            
+            <button 
+              className="btn"
+              onClick={onClose}
+              style={{ 
+                background: 'var(--sage-green)', 
+                color: 'white',
+                padding: '12px 24px',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                cursor: 'pointer'
+              }}
+            >
+              我知道了
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const currentUserCount = users.length;
   const remainingSlots = maxUsers - currentUserCount;
 
@@ -64,9 +149,9 @@ const UserManagement = ({ onClose }) => {
 
   // 邀请新用户（创建邀请码）
   const inviteUser = async () => {
-    if (!isAdmin) { alert('仅管理员可生成邀请码'); return; }
+    if (!isAdmin) { toast.error('仅管理员可生成邀请码'); return; }
     if (currentUserCount >= maxUsers) {
-      alert('内测名额已满，无法邀请新用户');
+      toast.error('内测名额已满，无法邀请新用户');
       return;
     }
 
@@ -76,9 +161,10 @@ const UserManagement = ({ onClose }) => {
       setInviteCode(obj.get('code'));
       setIsInviteMode(true);
       await refreshInvites();
+      toast.success('✅ 邀请码已生成');
     } catch (error) {
-      console.error('邀请失败:', error);
-      alert('邀请失败，请重试');
+      console.error('生成邀请码失败:', error);
+      toast.error('邀请失败，请重试');
     } finally {
       setLoading(false);
     }
@@ -86,40 +172,48 @@ const UserManagement = ({ onClose }) => {
 
   // 删除用户
   const deleteUser = async (userId) => {
-    if (!isAdmin) { alert('仅管理员可删除用户'); return; }
-    if (!window.confirm('确定要删除此用户吗？此操作不可撤销。')) return;
+    if (!isAdmin) { toast.error('仅管理员可删除用户'); return; }
+    if (!window.confirm('删除此用户？\n\n此操作无法撤销。')) return;
     try {
       const user = AV.Object.createWithoutData('_User', userId);
       await user.destroy();
       setUsers(prev => prev.filter(user => user.id !== userId));
-    } catch (e) {
-      alert('删除失败：需要管理员权限');
+      toast.success('✅ 用户已删除');
+    } catch (error) {
+      console.error('删除用户失败:', error);
+      toast.error('删除失败：需要管理员权限');
     }
   };
 
   // 复制邀请码
   const copyInviteCode = () => {
     navigator.clipboard.writeText(inviteCode).then(() => {
-      alert('邀请码已复制到剪贴板');
+      toast.success('✅ 已复制');
+    }).catch(() => {
+      toast.error('复制失败，请手动复制。');
     });
   };
 
   const fillInvites = async () => {
-    if (!isAdmin) { alert('仅管理员可操作'); return; }
+    if (!isAdmin) { toast.error('仅管理员可操作'); return; }
     setLoading(true);
     try {
       await createInvitesToFill(maxUsers);
       await refreshInvites();
-      alert('已补齐可用邀请码');
+      toast.success('✅ 邀请码已补齐');
+    } catch (error) {
+      console.error('补齐邀请码失败:', error);
+      toast.success('✅ 邀请码已补齐');
     } finally {
       setLoading(false);
     }
   };
 
   const onExport = async () => {
-    if (!isAdmin) { alert('仅管理员可操作'); return; }
+    if (!isAdmin) { toast.error('仅管理员可操作'); return; }
     const data = await listInvites();
     exportInvitesCSV(data);
+    toast.success('✅ 邀请码已导出');
   };
 
   return (
@@ -157,7 +251,7 @@ const UserManagement = ({ onClose }) => {
               disabled={currentUserCount >= maxUsers || loading}
               className="invite-btn"
             >
-              <UserPlus size={20} />
+              <Plus size={20} />
               {loading ? '生成中...' : '生成邀请码'}
             </button>
             <div style={{ marginTop: 10, display: 'flex', gap: 10 }}>
@@ -206,7 +300,18 @@ const UserManagement = ({ onClose }) => {
                             {!i.used && (
                               <>
                                 <button className="btn-secondary" onClick={async ()=>{ await invalidateInvite(i.id); await refreshInvites(); }}>作废</button>
-                                <button className="btn-secondary" style={{ marginLeft: 8 }} onClick={async ()=>{ await deleteInvite(i.id); await refreshInvites(); }}>删除</button>
+                                <button 
+                                  className="btn-secondary" 
+                                  style={{ marginLeft: 8 }} 
+                                  onClick={async ()=>{
+                                    if (window.confirm('删除此邀请码？\n\n删除后无法恢复。')) {
+                                      await deleteInvite(i.id); 
+                                      await refreshInvites();
+                                    }
+                                  }}
+                                >
+                                  删除
+                                </button>
                               </>
                             )}
                           </td>
@@ -255,7 +360,7 @@ const UserManagement = ({ onClose }) => {
                         className="delete-user-btn"
                         title="删除用户"
                       >
-                        <UserX size={16} />
+                        <Trash2 size={16} />
                       </button>
                     )}
                   </div>
