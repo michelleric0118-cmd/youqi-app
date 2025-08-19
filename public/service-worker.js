@@ -138,12 +138,24 @@ function isAPIRequest(url) {
 
 // 判断是否为页面请求
 function isPageRequest(request) {
+  // 安全检查：确保request.url存在
+  if (!request || !request.url) {
+    console.log('Service Worker: Invalid request object:', request);
+    return false;
+  }
+  
   return request.destination === 'document' || 
-         DYNAMIC_URLS.some(pageUrl => request.url.pathname.startsWith(pageUrl));
+         DYNAMIC_URLS.some(pageUrl => request.url.pathname && request.url.pathname.startsWith(pageUrl));
 }
 
 // 判断是否为静态资源请求
 function isStaticRequest(url) {
+  // 安全检查：确保url和pathname存在
+  if (!url || !url.pathname) {
+    console.log('Service Worker: Invalid URL object:', url);
+    return false;
+  }
+  
   return STATIC_URLS.some(staticUrl => url.pathname.startsWith(staticUrl)) ||
          url.pathname.includes('.js') ||
          url.pathname.includes('.css') ||

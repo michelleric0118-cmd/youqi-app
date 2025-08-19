@@ -83,7 +83,7 @@ const UpgradePage = lazy(() => import('./pages/Upgrade'));
 const QRScanner = lazy(() => import('./components/QRScanner'));
 const DataImport = lazy(() => import('./components/DataImport'));
 const FeatureTest = lazy(() => import('./components/FeatureTest'));
-const Settings = lazy(() => import('./components/Settings'));
+const Settings = lazy(() => import('./components/SettingsFixed'));
 
 // 加载中的提示组件
 const LoadingSpinner = ({ message = i18n.t('loading'), size = 'default' }) => {

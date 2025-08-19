@@ -1046,4 +1046,4 @@ const EditItem = () => {
   );
 };
 
-export default EditItem; 
+export default EditItem;
